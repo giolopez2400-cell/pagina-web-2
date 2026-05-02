@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generador de Datos de Prueba — Inventario TI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg:#04020c; --surface:#0a0614; --card:#0e0a1a;
+      --border:rgba(90,50,140,.22); --border-hi:rgba(140,70,220,.35);
+      --pink:#ff2d78; --cyan:#00e8ff; --purple:#b44fff; --yellow:#ffe135; --green:#4fffb0;
+      --text:#ede4f8; --text-sec:#b8a8d4; --muted:#6e5f8a;
+      --mono:'Share Tech Mono',monospace; --sans:'Exo 2',sans-serif; --title:'Orbitron',sans-serif;
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    ::-webkit-scrollbar{width:5px;height:5px}
+    ::-webkit-scrollbar-track{background:var(--bg)}
+    ::-webkit-scrollbar-thumb{background:rgba(255,45,120,.4)}
+    body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+    .bg-layer{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+    .bg-layer::before{content:'';position:absolute;width:800px;height:800px;top:-300px;left:-200px;background:radial-gradient(circle,rgba(180,79,255,.14) 0%,transparent 60%);animation:d1 12s ease-in-out infinite alternate}
+    .bg-layer::after{content:'';position:absolute;width:600px;height:600px;bottom:-150px;right:-100px;background:radial-gradient(circle,rgba(0,232,255,.1) 0%,transparent 60%);animation:d2 16s ease-in-out infinite alternate}
+    @keyframes d1{to{transform:translate(40px,30px) scale(1.1)}}
+    @keyframes d2{to{transform:translate(-40px,-20px) scale(.9)}}
+    .bg-vignette{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 75% 60% at 50% 40%,transparent 40%,rgba(4,2,12,.7) 100%)}
+    header,.main-wrap{position:relative;z-index:1}
+    header{background:linear-gradient(180deg,rgba(8,4,18,.97),rgba(4,2,12,.93));border-bottom:1px solid var(--border-hi);box-shadow:0 1px 0 0 var(--pink),0 4px 40px rgba(255,45,120,.1);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+    .logo{display:flex;align-items:center;gap:.75rem}
+    .logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--pink),var(--purple));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.85rem;box-shadow:0 0 18px rgba(255,45,120,.3)}
+    .logo h1{font-family:var(--title);font-size:.78rem;font-weight:700;letter-spacing:.12em}
+    .logo h1 span{color:var(--pink)}
+    .logo-sub{font-family:var(--mono);font-size:.5rem;color:var(--muted);letter-spacing:.15em;margin-top:1px}
+    .main-wrap{max-width:1400px;margin:0 auto;padding:2rem}
+    .hero{text-align:center;padding:2rem 0 2.5rem}
+    .hero h2{font-family:var(--title);font-size:1.3rem;letter-spacing:.1em;margin-bottom:.5rem}
+    .hero h2 span{color:var(--cyan)}
+    .hero p{color:var(--text-sec);font-size:.9rem;max-width:600px;margin:0 auto;line-height:1.6}
+    .btn-row{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin:1.5rem 0 2.5rem}
+    .btn{padding:.65rem 1.5rem;border-radius:8px;border:none;cursor:pointer;font-size:.75rem;font-weight:600;font-family:var(--title);letter-spacing:.06em;transition:all .2s;display:inline-flex;align-items:center;gap:.4rem;text-transform:uppercase}
+    .btn-xl{padding:.8rem 2rem;font-size:.82rem;border-radius:10px}
+    .btn-primary{background:linear-gradient(135deg,var(--pink),#d4145a);color:#fff;box-shadow:0 2px 16px rgba(255,45,120,.35)}
+    .btn-primary:hover{box-shadow:0 4px 28px rgba(255,45,120,.55);transform:translateY(-2px);filter:brightness(1.1)}
+    .btn-cyan{background:linear-gradient(135deg,rgba(0,232,255,.15),rgba(0,232,255,.08));color:var(--cyan);border:1px solid rgba(0,232,255,.3);box-shadow:0 2px 12px rgba(0,232,255,.1)}
+    .btn-cyan:hover{background:rgba(0,232,255,.2);border-color:rgba(0,232,255,.5);box-shadow:0 4px 24px rgba(0,232,255,.2);transform:translateY(-2px)}
+    .btn-purple{background:linear-gradient(135deg,rgba(180,79,255,.15),rgba(180,79,255,.08));color:var(--purple);border:1px solid rgba(180,79,255,.3)}
+    .btn-purple:hover{background:rgba(180,79,255,.2);border-color:rgba(180,79,255,.5);transform:translateY(-2px)}
+    .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.7rem;margin-bottom:2rem}
+    .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.85rem 1rem;position:relative;overflow:hidden}
+    .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+    .stat-card.sc1::before{background:linear-gradient(90deg,var(--pink),transparent)}
+    .stat-card.sc2::before{background:linear-gradient(90deg,var(--cyan),transparent)}
+    .stat-card.sc3::before{background:linear-gradient(90deg,var(--purple),transparent)}
+    .stat-card.sc4::before{background:linear-gradient(90deg,var(--yellow),transparent)}
+    .stat-card.sc5::before{background:linear-gradient(90deg,var(--green),transparent)}
+    .stat-num{font-family:var(--title);font-size:1.6rem;font-weight:700;line-height:1}
+    .sc1 .stat-num{color:var(--pink)} .sc2 .stat-num{color:var(--cyan)} .sc3 .stat-num{color:var(--purple)} .sc4 .stat-num{color:var(--yellow)} .sc5 .stat-num{color:var(--green)}
+    .stat-label{font-family:var(--mono);font-size:.56rem;letter-spacing:.08em;color:var(--muted);margin-top:.2rem;text-transform:uppercase}
+    .section-title{font-family:var(--title);font-size:.7rem;letter-spacing:.12em;color:var(--text-sec);text-transform:uppercase;margin:2rem 0 1rem;padding-bottom:.4rem;border-bottom:1px solid var(--border)}
+    .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1.5rem;max-height:400px;overflow-y:auto}
+    table{width:100%;border-collapse:collapse}
+    thead{background:var(--card);border-bottom:1px solid var(--border-hi);position:sticky;top:0;z-index:2}
+    th{padding:.6rem .75rem;text-align:left;font-size:.55rem;font-family:var(--title);color:var(--text-sec);text-transform:uppercase;letter-spacing:.1em;white-space:nowrap}
+    td{padding:.5rem .75rem;font-size:.75rem;border-bottom:1px solid rgba(90,50,140,.08);font-family:var(--mono);color:var(--text-sec)}
+    tbody tr:hover td{background:rgba(255,255,255,.015)}
+    .badge{display:inline-block;padding:.12rem .4rem;border-radius:3px;font-size:.55rem;font-family:var(--title);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+    .b-act{background:rgba(0,232,255,.1);color:var(--cyan);border:1px solid rgba(0,232,255,.2)}
+    .b-bod{background:rgba(255,225,53,.08);color:var(--yellow);border:1px solid rgba(255,225,53,.2)}
+    .b-baj{background:rgba(255,45,120,.1);color:var(--pink);border:1px solid rgba(255,45,120,.2)}
+    .note{background:rgba(180,79,255,.06);border:1px solid rgba(180,79,255,.15);border-radius:8px;padding:1rem 1.2rem;margin-top:2rem;font-size:.8rem;color:var(--text-sec);line-height:1.6}
+    .note b{color:var(--text)}
+    .toast-wrap{position:fixed;bottom:1.25rem;right:1.25rem;z-index:500;display:flex;flex-direction:column;gap:.4rem}
+    .toast{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.6rem 1rem;font-size:.78rem;font-family:var(--mono);display:flex;align-items:center;gap:.5rem;animation:ts .25s ease;min-width:200px;box-shadow:0 8px 30px rgba(0,0,0,.4);border-left:3px solid var(--cyan)}
+    @keyframes ts{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+    @media(max-width:640px){.main-wrap{padding:1rem}.hero h2{font-size:1rem}.btn-row{flex-direction:column;align-items:stretch}.btn-xl{justify-content:center}}
+  </style>
+</head>
+<body>
+<div class="bg-layer"></div>
+<div class="bg-vignette"></div>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">📊</div>
+    <div>
+      <h1>GENERADOR <span>TI</span></h1>
+      <div class="logo-sub">DATOS DE PRUEBA PARA INVENTARIO</div>
+    </div>
+  </div>
+</header>
+
+<div class="main-wrap">
+  <div class="hero">
+    <h2>Base de Datos de <span>Prueba</span></h2>
+    <p>20 usuarios, 30 equipos, periféricos, asignaciones y mantenimientos. Descarga en Excel para revisión o en JSON para importar directamente al sistema.</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card sc1"><div class="stat-num">20</div><div class="stat-label">Usuarios</div></div>
+    <div class="stat-card sc2"><div class="stat-num">30</div><div class="stat-label">Equipos</div></div>
+    <div class="stat-card sc3"><div class="stat-num">48</div><div class="stat-label">Periféricos</div></div>
+    <div class="stat-card sc4"><div class="stat-num">18</div><div class="stat-label">Asignaciones</div></div>
+    <div class="stat-card sc5"><div class="stat-num">12</div><div class="stat-label">Mantenimientos</div></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary btn-xl" onclick="descargarExcel()">📗 Descargar Excel (.xlsx)</button>
+    <button class="btn btn-cyan btn-xl" onclick="descargarJSON()">📥 Descargar JSON (importable)</button>
+    <button class="btn btn-purple btn-xl" onclick="copiarJSON()">📋 Copiar JSON al portapapeles</button>
+  </div>
+
+  <div id="preview"></div>
+
+  <div class="note">
+    <b>¿Cómo usar?</b><br>
+    1. <b>Excel:</b> Abre el archivo descargado para revisar los datos. Cada hoja es una tabla del sistema.<br>
+    2. <b>JSON:</b> En la página de inventario, haz clic en <b>📥 Importar</b> y carga este archivo. Se reemplazarán los datos actuales.<br>
+    3. <b>Portapapeles:</b> Pega el contenido en un archivo de texto, guárdalo como <code>.json</code> e impórtalo.
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+// ═══════════════════════════════════════
+// DATOS COMPLETOS DE PRUEBA
+// ═══════════════════════════════════════
+
+const usuarios = [
+  { id:"u_a1k9m3", nombre:"María",       apellido:"González",     cedula:"52145896",    cargo:"Contadora Senior",        depto:"Contabilidad",     siesa:"mgonzalez",  email:"maria.gonzalez@empresa.com",     tel:"+57 310 234 5678", sede:"Principal" },
+  { id:"u_b2l0n4", nombre:"Carlos",      apellido:"Rodríguez",    cedula:"79852341",    cargo:"Líder de Soporte TI",      depto:"Tecnología",      siesa:"crodriguez", email:"carlos.rodriguez@empresa.com",   tel:"+57 315 678 1234", sede:"Principal" },
+  { id:"u_c3m1o5", nombre:"Ana",         apellido:"Martínez",     cedula:"1032568741",  cargo:"Analista de Nómina",       depto:"Recursos Humanos", siesa:"amartinez",  email:"ana.martinez@empresa.com",       tel:"+57 320 456 7890", sede:"Principal" },
+  { id:"u_d4n2p6", nombre:"Juan",        apellido:"Pérez",        cedula:"79123456",    cargo:"Ejecutivo de Ventas",      depto:"Ventas",          siesa:"jperez",     email:"juan.perez@empresa.com",         tel:"+57 311 789 4561", sede:"Principal" },
+  { id:"u_e5o3q7", nombre:"Laura",       apellido:"Sánchez",      cedula:"528963147",   cargo:"Asistente de Gerencia",    depto:"Gerencia",        siesa:"lsanchez",   email:"laura.sanchez@empresa.com",      tel:"+57 312 345 6789", sede:"Principal" },
+  { id:"u_f6p4r8", nombre:"Pedro",       apellido:"López",        cedula:"98563214",    cargo:"Coordinador de Bodegas",   depto:"Logística",       siesa:"plopez",     email:"pedro.lopez@empresa.com",        tel:"+57 313 567 8901", sede:"Sucursal Norte" },
+  { id:"u_g7q5s9", nombre:"Camila",      apellido:"Torres",       cedula:"1004567892",  cargo:"Diseñadora Gráfica",       depto:"Mercadeo",        siesa:"ctorres",    email:"camila.torres@empresa.com",      tel:"+57 314 678 9012", sede:"Principal" },
+  { id:"u_h8r6t0", nombre:"Diego",       apellido:"Ramírez",      cedula:"79658432",    cargo:"Analista Financiero",      depto:"Finanzas",        siesa:"dramirez",   email:"diego.ramirez@empresa.com",      tel:"+57 316 789 0123", sede:"Principal" },
+  { id:"u_i9s7u1", nombre:"Valentina",   apellido:"Hernández",    cedula:"521748963",   cargo:"Abogada Corporativa",      depto:"Legal",           siesa:"vhernandez", email:"valentina.hernandez@empresa.com", tel:"+57 317 890 1234", sede:"Principal" },
+  { id:"u_j0t8v2", nombre:"Sebastián",   apellido:"Gómez",        cedula:"98541263",    cargo:"Ingeniero de Calidad",     depto:"Calidad",         siesa:"sgomez",     email:"sebastian.gomez@empresa.com",     tel:"+57 318 901 2345", sede:"Planta Producción" },
+  { id:"u_k1u9w3", nombre:"Diana",       apellido:"Jiménez",      cedula:"1036897412",  cargo:"Auxiliar Contable",        depto:"Contabilidad",     siesa:"djimenez",   email:"diana.jimenez@empresa.com",      tel:"+57 319 012 3456", sede:"Principal" },
+  { id:"u_l2v0x4", nombre:"Andrés",      apellido:"Muñoz",        cedula:"79823416",    cargo:"Técnico TI",               depto:"Tecnología",      siesa:"amunoz",     email:"andres.munoz@empresa.com",       tel:"+57 300 123 4567", sede:"Principal" },
+  { id:"u_m3w1y5", nombre:"Natalia",     apellido:"Rojas",        cedula:"523698741",   cargo:"Especialista en Talento",  depto:"Recursos Humanos", siesa:"nrojas",     email:"natalia.rojas@empresa.com",      tel:"+57 301 234 5678", sede:"Principal" },
+  { id:"u_n4x2z6", nombre:"Felipe",      apellido:"Castro",       cedula:"98632541",    cargo:"Asesor Comercial",         depto:"Ventas",          siesa:"fcastro",    email:"felipe.castro@empresa.com",      tel:"+57 302 345 6789", sede:"Sucursal Norte" },
+  { id:"u_o5y3a7", nombre:"Paola",       apellido:"Ortiz",        cedula:"1005789634",  cargo:"Secretaria General",       depto:"Gerencia",        siesa:"portiz",     email:"paola.ortiz@empresa.com",        tel:"+57 303 456 7890", sede:"Principal" },
+  { id:"u_p6z4b8", nombre:"Ricardo",     apellido:"Durán",        cedula:"79456123",    cargo:"Despachador",              depto:"Logística",       siesa:"rduran",     email:"ricardo.duran@empresa.com",      tel:"+57 304 567 8901", sede:"Sucursal Norte" },
+  { id:"u_q7a5c9", nombre:"Juliana",     apellido:"Restrepo",     cedula:"524896317",   cargo:"Community Manager",       depto:"Mercadeo",        siesa:"jrestrepo",  email:"juliana.restrepo@empresa.com",    tel:"+57 305 678 9012", sede:"Principal" },
+  { id:"u_r8b6d0", nombre:"Mauricio",    apellido:"Vargas",       cedula:"98714563",    cargo:"Tesorero",                 depto:"Finanzas",        siesa:"mvargas",    email:"mauricio.vargas@empresa.com",    tel:"+57 306 789 0123", sede:"Principal" },
+  { id:"u_s9c7e1", nombre:"Cristina",    apellido:"Morales",      cedula:"1006987452",  cargo:"Asistente Legal",          depto:"Legal",           siesa:"cmorales",   email:"cristina.morales@empresa.com",   tel:"+57 307 890 1234", sede:"Principal" },
+  { id:"u_t0d8f2", nombre:"Santiago",    apellido:"Arias",        cedula:"79563284",    cargo:"Inspector de Calidad",     depto:"Calidad",         siesa:"sarias",     email:"santiago.arias@empresa.com",     tel:"+57 308 901 2345", sede:"Planta Producción" },
+];
+
+const equipos = [
+  // ── PCs de Escritorio (15) ──
+  { id:"e_g9h1i2", tipo:"PC Escritorio", estado:"Activo",     marca:"Dell",   modelo:"OptiPlex 7090",      serial:"SN-DL7090-001", activo:"AF-2024-001", spec:"i7-11700, 16GB RAM",  disco:"512GB SSD NVMe",   ram:"16GB DDR4 3200MHz", fecha:"2024-01-15", valor:"4500000", ubicacion:"Piso 2, Puesto 01",    hostname:"PC-CONTAB-01", ipCable:"192.168.1.101", ipWifi:"", obs:"",
+    perifericos:{ monitor:{marca:"LG",serial:"SN-LG27-001",activo:"AF-2024-M01",obs:"27\" FHD IPS"}, teclado:{marca:"Logitech K120",serial:"SN-LGK-001",activo:"",obs:"USB cableado"}, mouse:{marca:"Logitech M90",serial:"SN-LGM-001",activo:"",obs:"USB cableado"} }},
+  { id:"e_h0i2j3", tipo:"PC Escritorio", estado:"Activo",     marca:"Dell",   modelo:"OptiPlex 7090",      serial:"SN-DL7090-002", activo:"AF-2024-002", spec:"i7-11700, 16GB RAM",  disco:"512GB SSD NVMe",   ram:"16GB DDR4 3200MHz", fecha:"2024-01-15", valor:"4500000", ubicacion:"Piso 2, Puesto 02",    hostname:"PC-CONTAB-02", ipCable:"192.168.1.102", ipWifi:"", obs:"",
+    perifericos:{ monitor:{marca:"LG",serial:"SN-LG27-002",activo:"AF-2024-M02",obs:"27\" FHD IPS"}, teclado:{marca:"Logitech K120",serial:"SN-LGK-002",activo:"",obs:"USB cableado"}, mouse:{marca:"Logitech M90",serial:"SN-LGM-002",activo:"",obs:"USB cableado"} }},
+  { id:"e_i1j3k4", tipo:"PC Escritorio", estado:"Activo",     marca:"HP",     modelo:"ProDesk 400 G9",     serial:"SN-HP400-003", activo:"AF-2024-003", spec:"i5-12500, 8GB RAM",   disco:"256GB SSD NVMe",   ram:"8GB DDR4 3200MHz",  fecha:"2024-02-10", valor:"3200000", ubicacion:"Piso 3, Puesto 05",    hostname:"PC-RRHH-01",   ipCable:"192.168.1.103", ipWifi:"", obs:"",
+    perifericos:{ monitor:{marca:"Samsung",serial:"SN-SM24-001",activo:"AF-2024-M03",obs:"24\" FHD"}, teclado:{marca:"HP K150",serial:"SN-HPK-001",activo:"",obs:"USB"}, mouse:{marca:"HP M150",serial:"SN-HPM-001",activo:"",obs:"USB"} }},
+  { id:"e_j2k4l5", tipo:"PC Escritorio", estado:"Activo",     marca:"HP",     modelo:"ProDesk 400 G9",     serial:"SN-HP400-004", activo:"AF-2024-004", spec:"i5-12500, 8GB RAM",   disco:"256GB SSD NVMe",   ram:"8GB DDR4 3200MHz",  fecha:"2024-02-10", valor:"3200000", ubicacion:"Piso 3, Puesto 06",    hostname:"PC-RRHH-02",   ipCable:"192.168.1.104", ipWifi:"", obs:"",
+    perifericos:{ monitor:{marca:"Samsung",serial:"SN-SM24-002",activo:"AF-2024-M04",obs:"24\" FHD"}, teclado:{marca:"HP K150",serial:"SN-HPK-002",activo:"",obs:"USB"}, mouse:{marca:"HP M150",serial:"SN-HPM-002",activo:"",obs:"USB"} }},
+  { id:"e_k3l5m6", tipo:"PC Escritorio", estado:"Activo",     marca:"Lenovo", modelo:"ThinkCentre M70q",   serial:"SN-LN70Q-005", activo:"AF-2024-005", spec:"i7-12700, 16GB RAM",  disco:"512GB SSD NVMe",   ram:"16GB DDR4 3200MHz", fecha:"2024-01-20", valor:"4200000", ubicacion:"Piso 4, Puesto 01",    hostname:"PC-FINAN-01",  ipCable:"192.168.1.105", ipWifi:"", obs:"",
+    perifericos:{ monitor:{marca:"Dell",serial:"SN-DL24-001",activo:"AF-2024-M05",obs:"24\" FHD P2422H"}, teclado:{marca:"Lenovo KB300",serial:"SN-LNK-001",activo:"",obs:"USB"}, mouse:{marca:"Lenovo M300",serial:"SN-LNM-001",activo:"",obs:"USB"} }},
+  { id:"e_l4m6n7", tipo:"PC Escritorio", estado:"Activo",     marca:"Lenovo", modelo:"ThinkCentre M70q",   serial:"SN-LN70Q-006", activo:"AF-2024-006", spec:"i7-12700, 16GB RAM",  disco:"512GB SSD NVMe",   ram:"16GB DDR4 3200MHz", fecha:"2024-01-20", valor:"4200000", ubicacion:"Piso 4, Puesto 02",    hostname:"PC-FINAN-02",  ipCable:"192.168.1.106", ipWifi:"", obs:"",
+    perifericos:{ monitor:{marca:"Dell",serial:"SN-DL24-002",activo:"AF-2024-M06",obs:"24\" FHD P2422H"}, teclado:{marca:"Lenovo KB300",serial:"SN-LNK-002",activo:"",obs:"USB"}, mouse:{marca:"Lenovo M300",serial:"SN-LNM-002",activo:"",obs:"USB"} }},
+  { id:"e_m5n7o8", tipo:"PC Escritorio", estado:"Activo",     marca:"Dell",   modelo:"OptiPlex 5090",      serial:"SN-DL509-007", activo:"AF-2024-007", spec:"i5-11500, 8GB RAM",   disco:"256GB SSD SATA",   ram:"8GB DDR4 3200MHz",  fecha:"2023-06-15", valor:"3500000", ubicacion:"Piso 5, Puesto 01",    hostname:"PC-LEGAL-01",  ipCable:"192.168.1.107", ipWifi:"", obs:"Equipo reasignado desde Ventas",
+    perifericos:{ monitor:{marca:"LG",serial:"SN-LG24-003",activo:"AF-2024-M07",obs:"24\" FHD"}, teclado:{marca:"Dell KB216",serial:"SN-DLK-001",activo:"",obs:"USB"}, mouse:{marca:"Dell MS116",serial:"SN-DLM-001",activo:"",obs:"USB"} }},
+  { id:"e_n6o8p9", tipo:"PC Escritorio", estado:"Activo",     marca:"Dell",   modelo:"OptiPlex 5090",      serial:"SN-DL509-008", activo:"AF-2024-008", spec:"i5-11500, 8GB RAM",   disco:"256GB SSD SATA",   ram:"8GB DDR4 3200MHz",  fecha:"2023-06-15", valor:"3500000", ubicacion:"Piso 5, Puesto 02",    hostname:"PC-LEGAL-02",  ipCable:"192.168.1.108", ipWifi:"", obs:"",
+    perifericos:{ monitor:{marca:"LG",serial:"SN-LG24-004",activo:"AF-2024-M08",obs:"24\" FHD"}, teclado:{marca:"Dell KB216",serial:"SN-DLK-002",activo:"",obs:"USB"}, mouse:{marca:"Dell MS116",serial:"SN-DLM-002",activo:"",obs:"USB"} }},
+  { id:"e_o7p9q0", tipo:"PC Escritorio", estado:"Activo",     marca:"HP",     modelo:"ProDesk 600 G9",     serial:"SN-HP600-009", activo:"AF-2024-009", spec:"i5-12500, 8GB RAM",   disco:"512GB SSD NVMe",   ram:"8GB DDR4 3200MHz",  fecha:"2024-03-05", valor:"3800000", ubicacion:"Piso 1, Puesto 03",    hostname:"PC-VENTAS-01", ipCable:"192.168.1.109", ipWifi:"", obs:"Equipo reasignado",
+    perifericos:{ monitor:{marca:"Samsung",serial:"SN-SM24-003",activo:"AF-2024-M09",obs:"24\" FHD"}, teclado:{marca:"HP K150",serial:"SN-HPK-003",activo:"",obs:"USB"}, mouse:{marca:"Logitech M185",serial:"SN-LGM185-001",activo:"",obs:"Inalámbrico"}, celular:{marca:"Samsung Galaxy A15",serial:"IMEI:354876123456789",activo:"AF-2024-C01",obs:"+57 311 789 4561"} }},
+  { id:"e_p8q0r1", tipo:"PC Escritorio", estado:"Activo",     marca:"HP",     modelo:"ProDesk 600 G9",     serial:"SN-HP600-010", activo:"AF-2024-010", spec:"i5-12500, 8GB RAM",   disco:"512GB SSD NVMe",   ram:"8GB DDR4 3200MHz",  fecha:"2024-03-05", valor:"3800000", ubicacion:"Sucursal Norte, Puesto 01",hostname:"PC-VENTAS-02", ipCable:"192.168.2.101", ipWifi:"", obs:"",
+    perifericos:{ monitor:{marca:"Samsung",serial:"SN-SM24-004",activo:"AF-2024-M10",obs:"24\" FHD"}, teclado:{marca:"HP K150",serial:"SN-HPK-004",activo:"",obs:"USB"}, mouse:{marca:"Logitech M185",serial:"SN-LGM185-002",activo:"",obs:"Inalámbrico"}, celular:{marca:"Xiaomi Redmi 13",serial:"IMEI:867543210987654",activo:"AF-2024-C02",obs:"+57 302 345 6789"} }},
+  { id:"e_q9r1s2", tipo:"PC Escritorio", estado:"Activo",     marca:"Lenovo", modelo:"ThinkCentre M90q",   serial:"SN-LN90Q-011", activo:"AF-2024-011", spec:"i5-12400, 8GB RAM",   disco:"256GB SSD NVMe",   ram:"8GB DDR4 3200MHz",  fecha:"2024-02-28", valor:"3600000", ubicacion:"Planta Producción, Lab",  hostname:"PC-CALIDAD-01",ipCable:"192.168.3.101", ipWifi:"", obs:"Equipo reasignado",
+    perifericos:{ monitor:{marca:"Dell",serial:"SN-DL24-003",activo:"AF-2024-M11",obs:"24\" FHD"}, teclado:{marca:"Lenovo KB300",serial:"SN-LNK-003",activo:"",obs:"USB"}, mouse:{marca:"Lenovo M300",serial:"SN-LNM-003",activo:"",obs:"USB"} }},
+  { id:"e_r0s2t3", tipo:"PC Escritorio", estado:"Activo",     marca:"Lenovo", modelo:"ThinkCentre M90q",   serial:"SN-LN90Q-012", activo:"AF-2024-012", spec:"i5-12400, 8GB RAM",   disco:"256GB SSD NVMe",   ram:"8GB DDR4 3200MHz",  fecha:"2024-02-28", valor:"3600000", ubicacion:"Planta Producción, Lab",  hostname:"PC-CALIDAD-02",ipCable:"192.168.3.102", ipWifi:"", obs:"",
+    perifericos:{ monitor:{marca:"Dell",serial:"SN-DL24-004",activo:"AF-2024-M12",obs:"24\" FHD"}, teclado:{marca:"Lenovo KB300",serial:"SN-LNK-004",activo:"",obs:"USB"}, mouse:{marca:"Lenovo M300",serial:"SN-LNM-004",activo:"",obs:"USB"} }},
+  { id:"e_s1t3u4", tipo:"PC Escritorio", estado:"Activo",     marca:"Dell",   modelo:"OptiPlex 7090",      serial:"SN-DL709-013", activo:"AF-2024-013", spec:"i7-11700, 16GB RAM",  disco:"512GB SSD NVMe",   ram:"16GB DDR4 3200MHz", fecha:"2024-01-25", valor:"4500000", ubicacion:"Sucursal Norte, Bodega",hostname:"PC-LOGIS-01",  ipCable:"192.168.2.102", ipWifi:"", obs:"",
+    perifericos:{ monitor:{marca:"LG",serial:"SN-LG27-003",activo:"AF-2024-M13",obs:"27\" FHD IPS"}, teclado:{marca:"Logitech K120",serial:"SN-LGK-003",activo:"",obs:"USB"}, mouse:{marca:"Logitech M90",serial:"SN-LGM-003",activo:"",obs:"USB"}, celular:{marca:"Samsung Galaxy A15",serial:"IMEI:351234567890123",activo:"AF-2024-C03",obs:"+57 313 567 8901"} }},
+  { id:"e_t2u4v5", tipo:"PC Escritorio", estado:"Activo",     marca:"HP",     modelo:"ProDesk 400 G9",     serial:"SN-HP400-014", activo:"AF-2024-014", spec:"i5-12500, 8GB RAM",   disco:"256GB SSD NVMe",   ram:"8GB DDR4 3200MHz",  fecha:"2024-03-10", valor:"3200000", ubicacion:"Sucursal Norte, Despacho",hostname:"PC-LOGIS-02", ipCable:"192.168.2.103", ipWifi:"", obs:"",
+    perifericos:{ monitor:{marca:"Samsung",serial:"SN-SM24-005",activo:"AF-2024-M14",obs:"24\" FHD"}, teclado:{marca:"HP K150",serial:"SN-HPK-005",activo:"",obs:"USB"}, mouse:{marca:"HP M150",serial:"SN-HPM-003",activo:"",obs:"USB"} }},
+  { id:"e_u3v5w6", tipo:"PC Escritorio", estado:"Baja",       marca:"Dell",   modelo:"OptiPlex 5090",      serial:"SN-DL509-015", activo:"AF-2024-015", spec:"i3-10100, 4GB RAM",   disco:"500GB HDD",        ram:"4GB DDR4 2666MHz",  fecha:"2020-03-20", valor:"2800000", ubicacion:"Bodega TI",             hostname:"",               ipCable:"",            ipWifi:"", obs:"Daño en placa madre, no reparable",
+    perifericos:null },
+
+  // ── Laptops (8) ──
+  { id:"e_v4w6x7", tipo:"Laptop",        estado:"Activo",     marca:"Dell",   modelo:"Latitude 5530",      serial:"SN-DL553-L01", activo:"AF-2024-L01", spec:"i7-1265U, 16GB RAM", disco:"512GB SSD NVMe",   ram:"16GB DDR5 4800MHz", fecha:"2024-01-10", valor:"6800000", ubicacion:"Móvil",                  hostname:"LT-LIDER-01", ipCable:"192.168.1.150", ipWifi:"192.168.10.101", obs:"",
+    perifericos:{ mouse:{marca:"Logitech M590",serial:"SN-LGM590-001",activo:"",obs:"Inalámbrico silencioso"}, diadema:{marca:"Jabra Evolve2 40",serial:"SN-JB40-001",activo:"",obs:"USB-C"}, celular:{marca:"Samsung Galaxy A54",serial:"IMEI:356789012345678",activo:"AF-2024-C04",obs:"+57 315 678 1234"} }},
+  { id:"e_w5x7y8", tipo:"Laptop",        estado:"Activo",     marca:"Dell",   modelo:"Latitude 5530",      serial:"SN-DL553-L02", activo:"AF-2024-L02", spec:"i7-1265U, 16GB RAM", disco:"512GB SSD NVMe",   ram:"16GB DDR5 4800MHz", fecha:"2024-01-10", valor:"6800000", ubicacion:"Móvil",                  hostname:"LT-TECNICO-01",ipCable:"192.168.1.151", ipWifi:"192.168.10.102", obs:"",
+    perifericos:{ mouse:{marca:"Logitech M590",serial:"SN-LGM590-002",activo:"",obs:"Inalámbrico"}, diadema:{marca:"Jabra Evolve2 40",serial:"SN-JB40-002",activo:"",obs:"USB-C"} }},
+  { id:"e_x6y8z9", tipo:"Laptop",        estado:"Activo",     marca:"HP",     modelo:"ProBook 450 G10",    serial:"SN-HP450-L03", activo:"AF-2024-L03", spec:"i5-1345U, 8GB RAM",  disco:"256GB SSD NVMe",   ram:"8GB DDR5 4800MHz",  fecha:"2024-02-15", valor:"5200000", ubicacion:"Piso 6, Gerencia",       hostname:"LT-GERENC-01", ipCable:"192.168.1.152", ipWifi:"192.168.10.103", obs:"Equipo reasignado",
+    perifericos:{ mouse:{marca:"HP M280",serial:"SN-HPM280-001",activo:"",obs:"Inalámbrico"}, celular:{marca:"Samsung Galaxy S23 FE",serial:"IMEI:352345678901234",activo:"AF-2024-C05",obs:"+57 312 345 6789"} }},
+  { id:"e_y7z9a0", tipo:"Laptop",        estado:"Activo",     marca:"HP",     modelo:"ProBook 450 G10",    serial:"SN-HP450-L04", activo:"AF-2024-L04", spec:"i5-1345U, 8GB RAM",  disco:"256GB SSD NVMe",   ram:"8GB DDR5 4800MHz",  fecha:"2024-02-15", valor:"5200000", ubicacion:"Piso 6, Gerencia",       hostname:"LT-SECR-01",   ipCable:"192.168.1.153", ipWifi:"192.168.10.104", obs:"",
+    perifericos:{ mouse:{marca:"HP M280",serial:"SN-HPM280-002",activo:"",obs:"Inalámbrico"}, celular:{marca:"Xiaomi Redmi Note 13",serial:"IMEI:861234567890123",activo:"AF-2024-C06",obs:"+57 303 456 7890"} }},
+  { id:"e_z8a0b1", tipo:"Laptop",        estado:"Activo",     marca:"Lenovo", modelo:"ThinkPad T14 Gen 4", serial:"SN-LNT14-L05", activo:"AF-2024-L05", spec:"i7-1365U, 16GB RAM", disco:"512GB SSD NVMe",   ram:"16GB DDR5 4800MHz", fecha:"2024-03-01", valor:"7500000", ubicacion:"Móvil",                  hostname:"LT-DISENO-01", ipCable:"192.168.1.154", ipWifi:"192.168.10.105", obs:"",
+    perifericos:{ mouse:{marca:"Logitech MX Anywhere 3",serial:"SN-LGMX3-001",activo:"",obs:"Inalámbrico Bluetooth"}, diadema:{marca:"HyperX Cloud Stinger 2",serial:"SN-HXCS2-001",activo:"",obs:"3.5mm + USB"}, base:{marca:"Cooler Master Notepal X3",serial:"",activo:"",obs:"3 ventiladores USB"} }},
+  { id:"e_a9b1c2", tipo:"Laptop",        estado:"Activo",     marca:"Lenovo", modelo:"ThinkPad T14 Gen 4", serial:"SN-LNT14-L06", activo:"AF-2024-L06", spec:"i7-1365U, 16GB RAM", disco:"512GB SSD NVMe",   ram:"16GB DDR5 4800MHz", fecha:"2024-03-01", valor:"7500000", ubicacion:"Móvil",                  hostname:"LT-MERCA-01",  ipCable:"192.168.1.155", ipWifi:"192.168.10.106", obs:"",
+    perifericos:{ mouse:{marca:"Logitech Pebble M350",serial:"SN-LGPM-001",activo:"",obs:"Bluetooth"} }},
+  { id:"e_b0c2d3", tipo:"Laptop",        estado:"En Bodega",  marca:"Dell",   modelo:"Latitude 5430",      serial:"SN-DL543-L07", activo:"AF-2024-L07", spec:"i5-1235U, 8GB RAM",  disco:"256GB SSD NVMe",   ram:"8GB DDR4 3200MHz",  fecha:"2024-04-20", valor:"5800000", ubicacion:"Bodega TI",             hostname:"",               ipCable:"",            ipWifi:"", obs:"Reserva para reemplazo",
+    perifericos:null },
+  { id:"e_c1d3e4", tipo:"Laptop",        estado:"En Bodega",  marca:"HP",     modelo:"ProBook 440 G10",    serial:"SN-HP440-L08", activo:"AF-2024-L08", spec:"i5-1335U, 8GB RAM",  disco:"256GB SSD NVMe",   ram:"8GB DDR5 4800MHz",  fecha:"2024-04-20", valor:"4900000", ubicacion:"Bodega TI",             hostname:"",               ipCable:"",            ipWifi:"", obs:"Reserva para reemplazo",
+    perifericos:null },
+
+  // ── Monitores independientes (5) ──
+  { id:"e_d2e4f5", tipo:"Monitor",       estado:"En Bodega",  marca:"LG",     modelo:"27MP400",           serial:"SN-LG27-M016", activo:"AF-2024-M15", spec:"27\" FHD IPS 75Hz",disco:"",                 ram:"",                  fecha:"2024-05-10", valor:"850000",  ubicacion:"Bodega TI",             hostname:"",               ipCable:"",            ipWifi:"", obs:"Stock bodega", perifericos:null },
+  { id:"e_e3f5g6", tipo:"Monitor",       estado:"En Bodega",  marca:"LG",     modelo:"27MP400",           serial:"SN-LG27-M017", activo:"AF-2024-M16", spec:"27\" FHD IPS 75Hz",disco:"",                 ram:"",                  fecha:"2024-05-10", valor:"850000",  ubicacion:"Bodega TI",             hostname:"",               ipCable:"",            ipWifi:"", obs:"Stock bodega", perifericos:null },
+  { id:"e_f4g6h7", tipo:"Monitor",       estado:"En Bodega",  marca:"Samsung",modelo:"S24R350",           serial:"SN-SM24-M018", activo:"AF-2024-M17", spec:"24\" FHD VA 75Hz", disco:"",                 ram:"",                  fecha:"2024-05-10", valor:"620000",  ubicacion:"Bodega TI",             hostname:"",               ipCable:"",            ipWifi:"", obs:"Stock bodega", perifericos:null },
+  { id:"e_g5h7i8", tipo:"Monitor",       estado:"En Bodega",  marca:"Samsung",modelo:"S24R350",           serial:"SN-SM24-M019", activo:"AF-2024-M18", spec:"24\" FHD VA 75Hz", disco:"",                 ram:"",                  fecha:"2024-05-10", valor:"620000",  ubicacion:"Bodega TI",             hostname:"",               ipCable:"",            ipWifi:"", obs:"Stock bodega", perifericos:null },
+  { id:"e_h6i8j9", tipo:"Monitor",       estado:"En Bodega",  marca:"Dell",   modelo:"P2422H",            serial:"SN-DL24-M020", activo:"AF-2024-M19", spec:"24\" FHD IPS 60Hz",disco:"",                 ram:"",                  fecha:"2024-05-15", valor:"780000",  ubicacion:"Bodega TI",             hostname:"",               ipCable:"",            ipWifi:"", obs:"Stock bodega", perifericos:null },
+
+  // ── Impresoras (2) ──
+  { id:"e_i7j9k0", tipo:"Impresora",     estado:"Activo",     marca:"HP",     modelo:"LaserJet Pro M404dn",serial:"SN-HPM404-I01",activo:"AF-2024-I01", spec:"Monocromática 40ppm",disco:"",                 ram:"",                  fecha:"2024-01-08", valor:"1200000", ubicacion:"Piso 2, Pasillo Contab", hostname:"IMP-CONTAB-01",ipCable:"192.168.1.200", ipWifi:"", obs:"Compartida por red", perifericos:null },
+  { id:"e_j8k0l1", tipo:"Impresora",     estado:"Activo",     marca:"HP",     modelo:"LaserJet Pro MFP M428fdw",serial:"SN-HPM428-I02",activo:"AF-2024-I02",spec:"Multifunción 40ppm", disco:"",                 ram:"",                  fecha:"2024-01-08", valor:"2200000", ubicacion:"Piso 6, Cerca Gerencia",hostname:"IMP-GERENC-01",ipCable:"192.168.1.201", ipWifi:"", obs:"Imprime, escanea, copia. Compartida por red", perifericos:null },
+];
+
+const asignaciones = [
+  { id:"a_n0m1o2", equipoId:"e_g9h1i2", usuarioId:"u_a1k9m3", fecha:"2024-01-20", entrega:"Andrés Muñoz",        obs:"Equipo nuevo, sin novedad" },
+  { id:"a_o1p2q3", equipoId:"e_h0i2j3", usuarioId:"u_k1u9w3", fecha:"2024-01-20", entrega:"Andrés Muñoz",        obs:"Equipo nuevo" },
+  { id:"a_p2q3r4", equipoId:"e_i1j3k4", usuarioId:"u_c3m1o5", fecha:"2024-02-15", entrega:"Carlos Rodríguez",    obs:"Configurado con perfil de nómina" },
+  { id:"a_q3r4s5", equipoId:"e_j2k4l5", usuarioId:"u_m3w1y5", fecha:"2024-02-15", entrega:"Carlos Rodríguez",    obs:"Equipo nuevo" },
+  { id:"a_r4s5t6", equipoId:"e_k3l5m6", usuarioId:"u_h8r6t0", fecha:"2024-01-25", entrega:"Andrés Muñoz",        obs:"Equipo nuevo" },
+  { id:"a_s5t6u7", equipoId:"e_l4m6n7", usuarioId:"u_r8b6d0", fecha:"2024-01-25", entrega:"Andrés Muñoz",        obs:"Equipo nuevo" },
+  { id:"a_t6u7v8", equipoId:"e_m5n7o8", usuarioId:"u_i9s7u1", fecha:"2023-09-10", entrega:"Andrés Muñoz",        obs:"Reasignado desde Ventas" },
+  { id:"a_u7v8w9", equipoId:"e_n6o8p9", usuarioId:"u_s9c7e1", fecha:"2023-06-20", entrega:"Carlos Rodríguez",    obs:"Equipo nuevo" },
+  { id:"a_v8w9x0", equipoId:"e_o7p9q0", usuarioId:"u_d4n2p6", fecha:"2023-11-15", entrega:"Carlos Rodríguez",    obs:"Reasignado, incluye celular corporativo" },
+  { id:"a_w9x0y1", equipoId:"e_p8q0r1", usuarioId:"u_n4x2z6", fecha:"2024-03-10", entrega:"Andrés Muñoz",        obs:"Envío a sucursal, incluye celular" },
+  { id:"a_x0y1z2", equipoId:"e_q9r1s2", usuarioId:"u_j0t8v2", fecha:"2023-10-20", entrega:"Carlos Rodríguez",    obs:"Reasignado desde producción" },
+  { id:"a_y1z2a3", equipoId:"e_r0s2t3", usuarioId:"u_t0d8f2", fecha:"2024-02-28", entrega:"Andrés Muñoz",        obs:"Equipo nuevo" },
+  { id:"a_z2a3b4", equipoId:"e_s1t3u4", usuarioId:"u_f6p4r8", fecha:"2024-01-28", entrega:"Andrés Muñoz",        obs:"Incluye celular corporativo" },
+  { id:"a_a3b4c5", equipoId:"e_t2u4v5", usuarioId:"u_p6z4b8", fecha:"2024-03-12", entrega:"Carlos Rodríguez",    obs:"Envío a sucursal norte" },
+  { id:"a_b4c5d6", equipoId:"e_v4w6x7", usuarioId:"u_b2l0n4", fecha:"2024-01-12", entrega:"Andrés Muñoz",        obs:"Laptop líder, incluye diadema y celular" },
+  { id:"a_c5d6e7", equipoId:"e_w5x7y8", usuarioId:"u_l2v0x4", fecha:"2024-01-12", entrega:"Andrés Muñoz",        obs:"Laptop técnico, incluye diadema" },
+  { id:"a_d6e7f8", equipoId:"e_x6y8z9", usuarioId:"u_e5o3q7", fecha:"2023-12-05", entrega:"Carlos Rodríguez",    obs:"Reasignada desde RRHH, incluye celular" },
+  { id:"a_e7f8g9", equipoId:"e_y7z9a0", usuarioId:"u_o5y3a7", fecha:"2024-02-18", entrega:"Andrés Muñoz",        obs:"Incluye celular corporativo" },
+  { id:"a_f8g9h0", equipoId:"e_z8a0b1", usuarioId:"u_g7q5s9", fecha:"2024-03-05", entrega:"Carlos Rodríguez",    obs:"Laptop diseño, incluye base refrigerante" },
+  { id:"a_g9h0i1", equipoId:"e_a9b1c2", usuarioId:"u_q7a5c9", fecha:"2024-03-05", entrega:"Carlos Rodríguez",    obs:"Laptop mercadeo" },
+];
+
+const mantenimientos = [
+  { id:"m_h0i1j2", equipoId:"e_g9h1i2", tipo:"Preventivo",   estado:"Completado",  fecha:"2024-06-15", tecnico:"Andrés Muñoz",        descripcion:"Limpieza interna, cambio de pasta térmica y revisión de ventiladores",              costo:"0",     obs:"Pasta térmica Artic MX-4" },
+  { id:"m_i1j2k3", equipoId:"e_v4w6x7", tipo:"Correctivo",   estado:"Completado",  fecha:"2024-05-20", tecnico:"Andrés Muñoz",        descripcion:"Reemplazo de batería que no cargaba correctamente",                                   costo:"185000",obs:"Batería original Dell" },
+  { id:"m_j2k3l4", equipoId:"e_i1j3k4", tipo:"Preventivo",   estado:"Completado",  fecha:"2024-07-10", tecnico:"Carlos Rodríguez",     descripcion:"Actualización de antivirus y revisión de políticas de seguridad",                     costo:"0",     obs:"Sophos Endpoint actualizado" },
+  { id:"m_k3l4m5", equipoId:"e_k3l5m6", tipo:"Limpieza",     estado:"Completado",  fecha:"2024-08-05", tecnico:"Andrés Muñoz",        descripcion:"Limpieza general de hardware, teclado y pantalla",                                  costo:"0",     obs:"Se usó aire comprimido y alcohol isopropílico" },
+  { id:"m_l4m5n6", equipoId:"e_o7p9q0", tipo:"Correctivo",   estado:"Completado",  fecha:"2024-04-10", tecnico:"Carlos Rodríguez",     descripcion:"Reemplazo de disco HDD por SSD NVMe de 512GB, clonación de sistema",              costo:"320000",obs:"SSD Kingston NV2 512GB" },
+  { id:"m_m5n6o7", equipoId:"e_w5x7y8", tipo:"Preventivo",   estado:"Completado",  fecha:"2024-06-20", tecnico:"Carlos Rodríguez",     descripcion:"Actualización de Windows 11 a última versión y drivers",                           costo:"0",     obs:"BIOS actualizado también" },
+  { id:"m_n6o7p8", equipoId:"e_m5n7o8", tipo:"Actualización",estado:"Completado",  fecha:"2024-05-08", tecnico:"Andrés Muñoz",        descripcion:"Upgrade de memoria RAM de 8GB a 16GB (módulo adicional)",                          costo:"120000",obs:"Módulo Kingston Fury 8GB DDR4 3200MHz" },
+  { id:"m_o7p8q9", equipoId:"e_z8a0b1", tipo:"Correctivo",   estado:"Completado",  fecha:"2024-07-25", tecnico:"Carlos Rodríguez",     descripcion:"Reparación de bisagras de pantalla y reemplazo de cubierta superior",               costo:"245000",obs:"Piezas originales Lenovo" },
+  { id:"m_p8q9r0", equipoId:"e_q9r1s2", tipo:"Preventivo",   estado:"Completado",  fecha:"2024-09-01", tecnico:"Andrés Muñoz",        descripcion:"Mantenimiento preventivo anual: limpieza, diagnóstico de disco y memoria",         costo:"0",     obs:"SMART del disco OK" },
+  { id:"m_q9r0s1", equipoId:"e_s1t3u4", tipo:"Limpieza",     estado:"Pendiente",   fecha:"2025-01-15", tecnico:"Andrés Muñoz",        descripcion:"Limpieza de teclado, mouse y ventiladores del equipo en sucursal norte",         costo:"0",     obs:"Pendiente visita a sucursal" },
+  { id:"m_r0s1t2", equipoId:"e_x6y8z9", tipo:"Actualización",estado:"En Proceso",  fecha:"2025-01-10", tecnico:"Carlos Rodríguez",     descripcion:"Upgrade de disco a SSD 1TB y migración de datos",                                  costo:"380000",obs:"SSD Samsung 980 PRO 1TB encargado" },
+  { id:"m_s1t2u3", equipoId:"e_h0i2j3", tipo:"Correctivo",   estado:"Pendiente",   fecha:"2025-01-20", tecnico:"Andrés Muñoz",        descripcion:"Equipo presenta apagados repentinos, posible fallo en fuente de poder",              costo:"0",     obs:"Diagnóstico pendiente, se sospecha fuente" },
+];
+
+const historialAsignaciones = [
+  { id:"h_t2u3v4", equipoId:"e_m5n7o8", usuarioId:"u_d4n2p6", fechaInicio:"2023-06-20", fechaFin:"2023-09-10", entrega:"Carlos Rodríguez", obs:"Devolución por reasignación a Legal" },
+  { id:"h_u3v4w5", equipoId:"e_o7p9q0", usuarioId:"u_n4x2z6", fechaInicio:"2024-03-10", fechaFin:"2023-11-15", entrega:"Carlos Rodríguez", obs:"El usuario se fue de la empresa" },
+  { id:"h_v4w5x6", equipoId:"e_x6y8z9", usuarioId:"u_c3m1o5", fechaInicio:"2024-02-15", fechaFin:"2023-12-05", entrega:"Carlos Rodríguez", obs:"Reasignada a Gerencia por solicitud" },
+  { id:"h_w5x6y7", equipoId:"e_q9r1s2", usuarioId:"u_j0t8v2", fechaInicio:"2024-02-28", fechaFin:"2023-10-20", entrega:"Carlos Rodríguez", obs:"El equipo estaba en planta, se trasladó" },
+  { id:"h_x6y7z8", equipoId:"e_i7j9k0", usuarioId:"u_a1k9m3", fechaInicio:"2024-01-08", fechaFin:"2024-01-08",   entrega:"Andrés Muñoz",        obs:"Impresora compartida, sin cambio de usuario" },
+];
+
+// ═══════════════════════════════════════
+// STATE COMPLETO
+// ═══════════════════════════════════════
+const state = { equipos, usuarios, asignaciones, mantenimientos, historialAsignaciones };
+
+// ═══════════════════════════════════════
+// GENERAR EXCEL
+// ═══════════════════════════════════════
+function descargarExcel() {
+  const wb = XLSX.utils.book_new();
+
+  // Hoja Usuarios
+  const usrRows = usuarios.map(u => ({
+    Nombre: u.nombre, Apellido: u.apellido, Cédula: u.cedula, Cargo: u.cargo,
+    Departamento: u.depto, SIESA: u.siesa, Email: u.email, Teléfono: u.tel, Sede: u.sede
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(usrRows), "Usuarios");
+
+  // Hoja Equipos
+  const eqRows = equipos.map(e => ({
+    Tipo: e.tipo, Estado: e.estado, Marca: e.marca, Modelo: e.modelo,
+    'Serial Fab.': e.serial, 'Activo Fijo': e.activo, Procesador: e.spec,
+    Disco: e.disco, RAM: e.ram, 'Fecha Compra': e.fecha,
+    Valor: e.valor ? '$' + Number(e.valor).toLocaleString() : '',
+    Ubicación: e.ubicacion, Hostname: e.hostname,
+    'IP Cable': e.ipCable, 'IP WiFi': e.ipWifi, Observaciones: e.obs
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(eqRows), "Equipos");
+
+  // Hoja Periféricos (desglosados)
+  const perNames = { monitor:'Monitor', teclado:'Teclado', mouse:'Mouse', diadema:'Diadema', base:'Base Refrigerante', celular:'Celular Corp.' };
+  const perRows = [];
+  equipos.forEach(e => {
+    if (!e.perifericos) return;
+    Object.entries(e.perifericos).forEach(([k, p]) => {
+      const uAsig = asignaciones.find(a => a.equipoId === e.id);
+      const usr = uAsig ? usuarios.find(x => x.id === uAsig.usuarioId) : null;
+      perRows.push({
+        'Activo Fijo Equipo': e.activo, 'Marca Equipo': e.marca + ' ' + (e.modelo||''),
+        'Asignado a': usr ? usr.nombre + ' ' + usr.apellido : 'Sin asignar',
+        'Tipo Periférico': perNames[k] || k,
+        Marca: p.marca, Serial: p.serial, 'Activo Fijo Perif.': p.activo, Nota: p.obs
+      });
+    });
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(perRows), "Periféricos");
+
+  // Hoja Asignaciones
+  const asigRows = asignaciones.map(a => {
+    const u = usuarios.find(x => x.id === a.usuarioId);
+    const e = equipos.find(x => x.id === a.equipoId);
+    return {
+      'Usuario': u ? u.nombre + ' ' + u.apellido : '?',
+      SIESA: u?.siesa || '', Departamento: u?.depto || '',
+      'Equipo': e ? e.marca + ' ' + (e.modelo||'') : '?',
+      Tipo: e?.tipo || '', 'Activo Fijo': e?.activo || '',
+      'Fecha Asignación': a.fecha, 'Entregado por': a.entrega, 'Obs.': a.obs
+    };
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(asigRows), "Asignaciones");
+
+  // Hoja Mantenimientos
+  const mntRows = mantenimientos.map(m => {
+    const e = equipos.find(x => x.id === m.equipoId);
+    return {
+      Equipo: e ? e.marca + ' ' + (e.modelo||'') : '?',
+      'Activo Fijo': e?.activo || '',
+      Tipo: m.tipo, Estado: m.estado, Fecha: m.fecha,
+      Técnico: m.tecnico, Descripción: m.descripcion,
+      Costo: m.costo ? '$' + Number(m.costo).toLocaleString() : '$0',
+      Observaciones: m.obs
+    };
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mntRows), "Mantenimientos");
+
+  // Hoja Historial
+  const histRows = historialAsignaciones.map(h => {
+    const u = usuarios.find(x => x.id === h.usuarioId);
+    const e = equipos.find(x => x.id === h.equipoId);
+    return {
+      Equipo: e ? e.marca + ' ' + (e.modelo||'') : '?',
+      'Activo Fijo': e?.activo || '',
+      'Usuario': u ? u.nombre + ' ' + u.apellido : '?',
+      'Fecha Inicio': h.fechaInicio, 'Fecha Fin': h.fechaFin,
+      'Entregado por': h.entrega, 'Obs.': h.obs
+    };
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(histRows), "Historial");
+
+  XLSX.writeFile(wb, "Inventario_TI_DatosPrueba.xlsx");
+  toast("Excel descargado: Inventario_TI_DatosPrueba.xlsx");
+}
+
+// ═══════════════════════════════════════
+// GENERAR JSON
+// ═══════════════════════════════════════
+function descargarJSON() {
+  const fecha = new Date().toISOString().slice(0,10);
+  const nombre = `inventario_TI_${fecha}.json`;
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = nombre; a.click();
+  URL.revokeObjectURL(a.href);
+  toast(`JSON descargado: ${nombre}`);
+}
+
+function copiarJSON() {
+  navigator.clipboard.writeText(JSON.stringify(state, null, 2)).then(() => {
+    toast("JSON copiado al portapapeles");
+  }).catch(() => {
+    toast("No se pudo copiar al portapapeles", "error");
+  });
+}
+
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = '✅ ' + msg;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// ═══════════════════════════════════════
+// VISTA PREVIA
+// ═══════════════════════════════════════
+function renderPreview() {
+  const estBadge = e => e === 'Activo' ? '<span class="badge b-act">Activo</span>'
+    : e === 'Baja' ? '<span class="badge b-baj">Baja</span>'
+    : '<span class="badge b-bod">En Bodega</span>';
+
+  let html = '';
+
+  // Usuarios
+  html += '<div class="section-title">👥 Usuarios (20)</div><div class="table-wrap"><table><thead><tr>';
+  ['#','Nombre','Apellido','Cédula','Cargo','Depto','SIESA','Email','Sede'].forEach(h => html += `<th>${h}</th>`);
+  html += '</tr></thead><tbody>';
+  usuarios.forEach((u,i) => {
+    html += `<tr><td>${i+1}</td><td>${u.nombre}</td><td>${u.apellido}</td><td>${u.cedula}</td><td>${u.cargo}</td><td>${u.depto}</td><td>${u.siesa}</td><td>${u.email}</td><td>${u.sede}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+
+  // Equipos
+  html += '<div class="section-title">🖥️ Equipos (30)</div><div class="table-wrap"><table><thead><tr>';
+  ['#','Tipo','Marca','Modelo','Serial','Activo Fijo','Estado','Hostname','IP Cable','Asignado a'].forEach(h => html += `<th>${h}</th>`);
+  html += '</tr></thead><tbody>';
+  equipos.forEach((e,i) => {
+    const asig = asignaciones.find(a => a.equipoId === e.id);
+    const usr = asig ? usuarios.find(u => u.id === asig.usuarioId) : null;
+    html += `<tr><td>${i+1}</td><td>${e.tipo}</td><td>${e.marca}</td><td>${e.modelo}</td><td>${e.serial}</td><td>${e.activo}</td><td>${estBadge(e.estado)}</td><td>${e.hostname||'—'}</td><td>${e.ipCable||'—'}</td><td>${usr ? usr.nombre+' '+usr.apellido : '—'}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+
+  // Periféricos
+  const perNames = { monitor:'🖥️ Monitor', teclado:'⌨️ Teclado', mouse:'🖱️ Mouse', diadema:'🎧 Diadema', base:'❄️ Base Refrig.', celular:'📱 Celular' };
+  html += '<div class="section-title">🔌 Periféricos por Equipo</div><div class="table-wrap"><table><thead><tr>';
+  ['Equipo','Tipo','Marca','Serial','Activo Fijo','Nota'].forEach(h => html += `<th>${h}</th>`);
+  html += '</tr></thead><tbody>';
+  let perCount = 0;
+  equipos.forEach(e => {
+    if (!e.perifericos) return;
+    Object.entries(e.perifericos).forEach(([k,p]) => {
+      perCount++;
+      html += `<tr><td>${e.activo} — ${e.marca} ${e.modelo||''}</td><td>${perNames[k]||k}</td><td>${p.marca}</td><td>${p.serial||'—'}</td><td>${p.activo||'—'}</td><td>${p.obs||'—'}</td></tr>`;
+    });
+  });
+  html += '</tbody></table></div>';
+
+  // Mantenimientos
+  html += '<div class="section-title">🔧 Mantenimientos (12)</div><div class="table-wrap"><table><thead><tr>';
+  ['#','Equipo','Tipo','Estado','Fecha','Técnico','Descripción','Costo'].forEach(h => html += `<th>${h}</th>`);
+  html += '</tr></thead><tbody>';
+  mantenimientos.forEach((m,i) => {
+    const e = equipos.find(x => x.id === m.equipoId);
+    const estM = m.estado === 'Completado' ? '<span class="badge b-act">Completado</span>'
+      : m.estado === 'En Proceso' ? '<span class="badge b-bod">En Proceso</span>'
+      : '<span class="badge b-baj">Pendiente</span>';
+    html += `<tr><td>${i+1}</td><td>${e?e.marca+' '+(e.modelo||''):'?'} — ${e?.activo||''}</td><td>${m.tipo}</td><td>${estM}</td><td>${m.fecha}</td><td>${m.tecnico}</td><td style="max-width:300px">${m.descripcion}</td><td>${m.costo?'$'+Number(m.costo).toLocaleString():'$0'}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+
+  document.getElementById('preview').innerHTML = html;
+  // Actualizar contador de periféricos
+  document.querySelector('.sc3 .stat-num').textContent = perCount;
+}
+
+renderPreview();
+</script>
+</body>
+</html>
