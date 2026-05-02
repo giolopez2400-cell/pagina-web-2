@@ -1,0 +1,1963 @@
+<!DOCTYPE html>
+<!-- Declara que este documento es HTML5 (el estándar moderno de páginas web) -->
+
+<html lang="es">
+<!-- Abre el documento HTML y define el idioma como español (ayuda a lectores de pantalla y buscadores) -->
+
+<head>
+  <!-- Sección de configuración: no se ve en pantalla, pero define cómo funciona la página -->
+
+  <meta charset="UTF-8">
+  <!-- Le dice al navegador que use caracteres UTF-8 (soporte para tildes, ñ, emojis, etc.) -->
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Hace que la página se adapte al ancho de la pantalla (diseño responsivo / mobile-friendly) -->
+
+  <title>Inventario TI — Equipos & Periféricos</title>
+  <!-- Texto que aparece en la pestaña del navegador -->
+
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <!-- Importa 3 fuentes de Google Fonts:
+       - Orbitron: fuente techno para títulos y encabezados
+       - Share Tech Mono: fuente monoespaciada para datos técnicos (seriales, IPs, etc.)
+       - Exo 2: fuente moderna para texto general -->
+
+  <style>
+    /* =====================================================================
+       VARIABLES CSS (--nombre): Son como "constantes" de diseño.
+       Definen los colores y fuentes de toda la app en un solo lugar.
+       Si cambias un color aquí, cambia en todas partes automáticamente.
+    ===================================================================== */
+    :root {
+      --bg:       #04020c;          /* Color de fondo principal (negro casi puro con tinte morado) */
+      --surface:  #0a0614;          /* Fondo de superficies (un poco más claro que el fondo) */
+      --card:     #0e0a1a;          /* Fondo de tarjetas y modales */
+      --raised:   #130e22;          /* Fondo de elementos elevados (cabeceras de tabla, etc.) */
+      --border:   rgba(90,50,140,.22);   /* Color de bordes normales (morado muy transparente) */
+      --border-hi:rgba(140,70,220,.35);  /* Color de bordes resaltados */
+      --pink:     #ff2d78;          /* Color rosa/fucsia para acciones primarias y alertas */
+      --pink-dim: rgba(255,45,120,.12);  /* Rosa con baja opacidad (fondos de badges, etc.) */
+      --cyan:     #00e8ff;          /* Color cyan para información y resaltados */
+      --cyan-dim: rgba(0,232,255,.10);   /* Cyan con baja opacidad */
+      --purple:   #b44fff;          /* Color púrpura para edición y detalles */
+      --purple-dim:rgba(180,79,255,.10); /* Púrpura con baja opacidad */
+      --yellow:   #ffe135;          /* Amarillo para advertencias y datos SIESA */
+      --yellow-dim:rgba(255,225,53,.08); /* Amarillo con baja opacidad */
+      --green:    #4fffb0;          /* Verde para estado "Completado" */
+      --green-dim:rgba(79,255,176,.08);  /* Verde con baja opacidad */
+      --text:     #ede4f8;          /* Color de texto principal (blanco levemente morado) */
+      --text-sec: #b8a8d4;          /* Color de texto secundario (más gris/tenue) */
+      --muted:    #6e5f8a;          /* Color de texto apagado / placeholders */
+      --mono:     'Share Tech Mono', monospace; /* Variable con la fuente monoespaciada */
+      --sans:     'Exo 2', sans-serif;          /* Variable con la fuente sans-serif general */
+      --title:    'Orbitron', sans-serif;       /* Variable con la fuente de títulos techno */
+    }
+
+    /* Reset universal: elimina márgenes y paddings por defecto del navegador
+       y hace que el tamaño incluya los bordes (box-sizing: border-box) */
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    /* =====================================================================
+       BARRA DE DESPLAZAMIENTO PERSONALIZADA (solo funciona en Chrome/Edge)
+    ===================================================================== */
+    ::-webkit-scrollbar { width:5px; height:5px; }        /* Ancho/alto de la barra */
+    ::-webkit-scrollbar-track { background:var(--bg); }   /* Fondo de la pista */
+    ::-webkit-scrollbar-thumb { background:rgba(255,45,120,.4); } /* Color del "pulgar" */
+    ::-webkit-scrollbar-thumb:hover { background:var(--pink); }   /* Color al pasar el mouse */
+
+    /* =====================================================================
+       CUERPO DE LA PÁGINA
+    ===================================================================== */
+    body {
+      margin:0;                     /* Sin margen externo */
+      font-family: var(--sans);     /* Fuente por defecto para todo el texto */
+      color: var(--text);           /* Color de texto por defecto */
+      /* Fondo animado: gradiente de 3 colores que se mueve continuamente */
+      background: linear-gradient(270deg,#04020c,#0e0a1a,#04020c);
+      background-size: 600% 600%;   /* Fondo grande para que la animación se vea suave */
+      animation: bgMove 12s ease infinite; /* Animación de 12 segundos en loop */
+    }
+
+    /* =====================================================================
+       CAPAS DE FONDO DECORATIVAS (efectos visuales, no son contenido real)
+    ===================================================================== */
+
+    /* Contenedor fijo que abarca toda la pantalla para efectos de fondo */
+    .bg-layer {
+      position:fixed; inset:0;      /* Cubre toda la pantalla */
+      z-index:0;                    /* Detrás de todo el contenido */
+      pointer-events:none;          /* No bloquea clics del usuario */
+      overflow:hidden;              /* Recorta el contenido que se salga */
+    }
+
+    /* Esfera de luz púrpura en la esquina superior izquierda */
+    .bg-layer::before {
+      content:'';                   /* Elemento vacío (solo decorativo) */
+      position:absolute; width:900px; height:900px;
+      top:-350px; left:-250px;      /* Posición: mayormente fuera de pantalla */
+      /* Círculo radial difuso de color púrpura */
+      background: radial-gradient(circle, rgba(180,79,255,.16) 0%, transparent 60%);
+      animation: drift1 14s ease-in-out infinite alternate; /* Flota suavemente */
+    }
+
+    /* Esfera de luz cyan en la esquina inferior derecha */
+    .bg-layer::after {
+      content:'';
+      position:absolute; width:700px; height:700px;
+      bottom:-200px; right:-150px;  /* Posición: esquina inferior derecha */
+      background: radial-gradient(circle, rgba(0,232,255,.12) 0%, transparent 60%);
+      animation: drift2 18s ease-in-out infinite alternate; /* Flota más lento */
+    }
+
+    /* Animación: la esfera púrpura se mueve y cambia de tamaño */
+    @keyframes drift1 { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(60px,40px) scale(1.15)} }
+
+    /* Animación: la esfera cyan se mueve en dirección opuesta */
+    @keyframes drift2 { 0%{transform:translate(0,0) scale(1.1)} 100%{transform:translate(-50px,-30px) scale(.9)} }
+
+    /* Cuadrícula de líneas finas como fondo de "grid técnico" */
+    .bg-grid {
+      position:fixed; inset:0; z-index:0; pointer-events:none;
+      /* Crea dos gradientes entrelazados que forman una cuadrícula */
+      background:
+        linear-gradient(rgba(180,79,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(180,79,255,.025) 1px, transparent 1px);
+      background-size: 56px 56px;   /* Tamaño de cada celda de la cuadrícula */
+      /* Máscara: hace que la cuadrícula se desvanezca hacia los bordes */
+      mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, black 20%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, black 20%, transparent 80%);
+    }
+
+    /* Viñeta: oscurece los bordes de la pantalla para dar profundidad */
+    .bg-vignette {
+      position:fixed; inset:0; z-index:0; pointer-events:none;
+      background: radial-gradient(ellipse 75% 65% at 50% 40%, transparent 40%, rgba(4,2,12,.7) 100%);
+    }
+
+    /* Asegura que el header, el contenido principal y los overlays
+       aparezcan encima de las capas de fondo decorativas */
+    header, main, .overlay, .toast-wrap { position:relative; z-index:1; }
+
+    /* =====================================================================
+       BARRA DE NAVEGACIÓN SUPERIOR (HEADER)
+    ===================================================================== */
+    header {
+      /* Fondo semi-transparente con gradiente oscuro */
+      background: linear-gradient(180deg, rgba(8,4,18,.97) 0%, rgba(4,2,12,.93) 100%);
+      border-bottom: 1px solid var(--border-hi); /* Línea divisoria abajo */
+      /* Sombra con brillo rosa/morado para el efecto "neon" */
+      box-shadow: 0 1px 0 0 var(--pink), 0 4px 40px rgba(255,45,120,.12), 0 1px 80px rgba(180,79,255,.06);
+      padding: 0 2rem;              /* Espacio interno horizontal */
+      display: flex; align-items: center; justify-content: space-between; /* Layout flex: logo a la izq, botones a la der */
+      height: 64px;                 /* Altura fija del header */
+      position: sticky; top:0; z-index:100; /* Se queda pegado arriba al hacer scroll */
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); /* Efecto de vidrio esmerilado */
+    }
+
+    /* Contenedor del logo (ícono + texto) */
+    .logo { display:flex; align-items:center; gap:.85rem; }
+
+    /* Cuadro del ícono del logo */
+    .logo-icon {
+      width:38px; height:38px;
+      background: linear-gradient(135deg, var(--pink) 0%, var(--purple) 100%); /* Gradiente rosa→morado */
+      border-radius: 8px;           /* Bordes redondeados */
+      display:flex; align-items:center; justify-content:center; /* Centra el emoji */
+      font-size:.95rem;
+      box-shadow: 0 0 20px rgba(255,45,120,.35), 0 4px 12px rgba(0,0,0,.4); /* Brillo rosa */
+      animation: logoPulse 4s ease-in-out infinite; /* Animación de pulso continuo */
+    }
+
+    /* Animación: el logo "respira" cambiando la intensidad del brillo */
+    @keyframes logoPulse {
+      0%,100% { box-shadow: 0 0 16px rgba(255,45,120,.3), 0 4px 12px rgba(0,0,0,.4); }
+      50%     { box-shadow: 0 0 28px rgba(255,45,120,.5), 0 0 48px rgba(180,79,255,.15), 0 4px 12px rgba(0,0,0,.4); }
+    }
+
+    /* Texto principal del logo */
+    .logo h1 {
+      font-family:var(--title); font-size:.82rem; font-weight:700;
+      letter-spacing:.14em;         /* Espaciado amplio entre letras (estilo techno) */
+      color:var(--text);
+    }
+    .logo h1 span { color:var(--pink); } /* La parte resaltada del logo en rosa */
+
+    /* Subtexto debajo del título del logo */
+    .logo-sub {
+      font-family:var(--mono); font-size:.55rem; color:var(--muted);
+      letter-spacing:.18em; margin-top:1px;
+    }
+
+    /* Contenedor de botones del lado derecho del header */
+    .hdr-right { display:flex; gap:.5rem; align-items:center; }
+
+    /* =====================================================================
+       SISTEMA DE BOTONES REUTILIZABLES
+       Todos comparten .btn como base, y agregan una clase de color
+    ===================================================================== */
+    .btn {
+      padding:.5rem 1.1rem; border-radius:6px; border:none; cursor:pointer;
+      font-size:.72rem; font-weight:600; font-family:var(--title);
+      letter-spacing:.06em; transition: all .2s ease; /* Transición suave en hover */
+      display:inline-flex; align-items:center; gap:.35rem;
+      text-transform:uppercase; white-space:nowrap; /* Texto siempre en mayúsculas */
+    }
+    .btn-primary {
+      /* Botón principal: rosa degradado, para acciones importantes como "Nuevo Equipo" */
+      background: linear-gradient(135deg, var(--pink) 0%, #d4145a 100%);
+      color:#fff; box-shadow: 0 2px 12px rgba(255,45,120,.3), 0 1px 3px rgba(0,0,0,.3);
+    }
+    .btn-primary:hover {
+      /* Al pasar el mouse: más brillo y se eleva ligeramente */
+      box-shadow: 0 4px 24px rgba(255,45,120,.5), 0 2px 8px rgba(0,0,0,.3);
+      transform:translateY(-1px); filter:brightness(1.1);
+    }
+    .btn-secondary {
+      /* Botón secundario: cyan/transparente para acciones como "Exportar" */
+      background: rgba(0,232,255,.06);
+      color:var(--cyan); border:1px solid rgba(0,232,255,.2);
+    }
+    .btn-secondary:hover {
+      background:rgba(0,232,255,.12); border-color:rgba(0,232,255,.4);
+      box-shadow: 0 0 20px rgba(0,232,255,.15);
+      transform:translateY(-1px);
+    }
+    .btn-danger {
+      /* Botón de peligro: rosa/transparente para acciones como "Eliminar" */
+      background:rgba(255,45,120,.06); color:var(--pink);
+      border:1px solid rgba(255,45,120,.2);
+    }
+    .btn-danger:hover {
+      background:rgba(255,45,120,.14); border-color:rgba(255,45,120,.4);
+      box-shadow:0 0 16px rgba(255,45,120,.2); transform:translateY(-1px);
+    }
+    .btn-edit {
+      /* Botón de editar: púrpura/transparente */
+      background:rgba(180,79,255,.06); color:var(--purple);
+      border:1px solid rgba(180,79,255,.2);
+    }
+    .btn-edit:hover {
+      background:rgba(180,79,255,.14); border-color:rgba(180,79,255,.4);
+      box-shadow:0 0 16px rgba(180,79,255,.2); transform:translateY(-1px);
+    }
+    .btn-sm { padding:.28rem .6rem; font-size:.65rem; border-radius:4px; } /* Variante pequeña del botón */
+
+    /* =====================================================================
+       ÁREA DE CONTENIDO PRINCIPAL
+    ===================================================================== */
+    main { max-width:1520px; margin:0 auto; padding:1.75rem 2rem 3rem; }
+    /* max-width centra el contenido en pantallas muy anchas */
+
+    /* =====================================================================
+       SISTEMA DE PESTAÑAS (Usuarios / Equipos / Asignaciones / Mantenimientos)
+    ===================================================================== */
+    .tabs {
+      display:flex; gap:4px; margin-bottom:2rem;
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:10px; padding:4px; /* Las pestañas flotan sobre un fondo redondeado */
+    }
+    .tab {
+      flex:1;                       /* Cada pestaña ocupa el mismo ancho disponible */
+      padding:.65rem 1rem; border-radius:7px; cursor:pointer;
+      font-size:.65rem; font-weight:600; font-family:var(--title);
+      letter-spacing:.1em; border:none;
+      color:var(--muted); background:transparent;
+      user-select:none;             /* El texto de la pestaña no se puede seleccionar */
+      text-transform:uppercase;
+      transition: all .22s ease;
+    }
+    .tab.active {
+      /* Pestaña seleccionada: fondo con gradiente rosa-morado y borde sutil */
+      color:#fff;
+      background: linear-gradient(135deg, rgba(255,45,120,.18) 0%, rgba(180,79,255,.14) 100%);
+      border:1px solid rgba(255,45,120,.25);
+      box-shadow: 0 0 24px rgba(255,45,120,.12), inset 0 0 20px rgba(255,45,120,.04);
+    }
+    .tab:hover:not(.active) {
+      color:var(--text-sec); background:rgba(255,255,255,.03); /* Hover sutil en pestañas inactivas */
+    }
+    .tab:focus { outline:none; } /* Elimina el contorno azul del navegador al hacer clic */
+
+    /* Cada sección de contenido (una por pestaña) está oculta por defecto */
+    .section { display:none; }
+    /* Solo se muestra la sección con clase "active" */
+    .section.active { display:block; animation:sectionIn .3s ease both; }
+    /* Animación de entrada: aparece desde abajo con fade */
+    @keyframes sectionIn {
+      from { opacity:0; transform:translateY(10px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    /* =====================================================================
+       BARRA DE HERRAMIENTAS (filtros y buscador sobre cada tabla)
+    ===================================================================== */
+    .toolbar {
+      display:flex; gap:.75rem; margin-bottom:1.25rem;
+      align-items:center; flex-wrap:wrap; /* En pantallas pequeñas, los elementos se apilan */
+    }
+
+    /* Caja de búsqueda con ícono de lupa generado por CSS */
+    .search-box { flex:1; min-width:200px; position:relative; }
+    .search-box input {
+      width:100%; background:var(--surface);
+      border:1px solid var(--border); border-radius:8px;
+      color:var(--text); padding:.6rem 1rem .6rem 2.2rem; /* Padding izquierdo extra para la lupa */
+      font-size:.82rem; font-family:var(--mono); transition:all .2s;
+    }
+    .search-box input::placeholder { color:var(--muted); } /* Color del texto de ayuda */
+    .search-box input:focus {
+      outline:none; border-color:rgba(0,232,255,.4);
+      box-shadow:0 0 0 3px rgba(0,232,255,.08), 0 0 20px rgba(0,232,255,.06);
+      background:var(--card);
+    }
+    /* Símbolo "⌕" que actúa como ícono de lupa, generado con CSS puro */
+    .search-box::before {
+      content:'⌕'; position:absolute; left:.75rem; top:50%;
+      transform:translateY(-50%); font-size:.9rem; color:var(--cyan); opacity:.5;
+    }
+
+    /* Estilo base para los dropdowns/selects de filtro */
+    select.filter {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:8px; color:var(--text); padding:.6rem .9rem;
+      font-size:.8rem; font-family:var(--mono); cursor:pointer; transition:all .2s;
+    }
+    select.filter:focus {
+      outline:none; border-color:rgba(180,79,255,.4);
+      box-shadow:0 0 0 3px rgba(180,79,255,.08);
+    }
+
+    /* =====================================================================
+       CONTENEDOR Y ESTILOS DE TABLAS
+    ===================================================================== */
+    .table-wrap, .users-table-wrap {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:12px; overflow:hidden; /* Recorta las esquinas de la tabla */
+      box-shadow: 0 8px 40px rgba(0,0,0,.35), 0 0 80px rgba(180,79,255,.03);
+    }
+    table { width:100%; border-collapse:collapse; } /* Celdas sin espacio entre ellas */
+    thead {
+      /* Encabezado de tabla con gradiente y borde inferior resaltado */
+      background: linear-gradient(180deg, var(--raised) 0%, var(--surface) 100%);
+      border-bottom:1px solid var(--border-hi);
+    }
+    th {
+      padding:.85rem 1rem; text-align:left;
+      font-size:.6rem; font-family:var(--title);
+      color:var(--text-sec); text-transform:uppercase;
+      letter-spacing:.14em; white-space:nowrap; font-weight:600; /* Encabezados en mayúsculas */
+    }
+    td {
+      padding:.75rem 1rem; font-size:.82rem;
+      border-bottom:1px solid rgba(90,50,140,.1); /* Línea divisoria entre filas */
+      vertical-align:middle; transition:background .15s;
+    }
+    tr:last-child td { border-bottom:none; } /* La última fila no tiene borde inferior */
+    tbody tr { transition:background .15s; }
+    tbody tr:hover td { background:rgba(255,255,255,.015); } /* Fila se ilumina ligeramente al hacer hover */
+
+    .mono { font-family:var(--mono); font-size:.74rem; color:var(--muted); } /* Clase para datos técnicos */
+    .actions { display:flex; gap:.35rem; align-items:center; flex-wrap:wrap; } /* Contenedor de botones de acción */
+
+    /* Estado vacío: mensaje cuando no hay datos en la tabla */
+    .empty-state { text-align:center; padding:4rem 2rem; color:var(--muted); }
+    .empty-state .icon { font-size:2.5rem; margin-bottom:.75rem; opacity:.4; display:block; }
+
+    /* =====================================================================
+       BADGES / ETIQUETAS DE ESTADO Y TIPO
+       Pequeñas pastillas de colores que indican tipo o estado de un elemento
+    ===================================================================== */
+    .badge {
+      display:inline-block; padding:.18rem .55rem; border-radius:4px;
+      font-size:.6rem; font-family:var(--title); font-weight:700;
+      text-transform:uppercase; letter-spacing:.06em;
+    }
+    /* Tipos de equipo */
+    .badge-pc      { background:var(--cyan-dim);   color:var(--cyan);   border:1px solid rgba(0,232,255,.2); }
+    .badge-laptop  { background:var(--purple-dim);  color:var(--purple); border:1px solid rgba(180,79,255,.2); }
+    .badge-monitor { background:var(--yellow-dim);  color:var(--yellow); border:1px solid rgba(255,225,53,.2); }
+    .badge-otro    { background:rgba(110,95,138,.08); color:var(--muted); border:1px solid rgba(110,95,138,.2); }
+    /* Estados del equipo */
+    .badge-activo  { background:var(--cyan-dim);   color:var(--cyan);   border:1px solid rgba(0,232,255,.2); }
+    .badge-baja    { background:var(--pink-dim);   color:var(--pink);   border:1px solid rgba(255,45,120,.2); }
+    .badge-bodega  { background:var(--yellow-dim);  color:var(--yellow); border:1px solid rgba(255,225,53,.2); }
+
+    /* =====================================================================
+       CHIPS DE USUARIO (avatar circular con iniciales + nombre)
+    ===================================================================== */
+    .user-chip { display:flex; align-items:center; gap:.45rem; }
+    .avatar {
+      /* Avatar pequeño: cuadrado redondeado con iniciales del usuario */
+      width:26px; height:26px; border-radius:5px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:.6rem; font-weight:700; flex-shrink:0;
+      font-family:var(--title); box-shadow:0 2px 6px rgba(0,0,0,.3);
+    }
+    .avatar-lg {
+      /* Avatar más grande para la lista de usuarios */
+      width:36px; height:36px; border-radius:8px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:.72rem; font-weight:700; flex-shrink:0;
+      font-family:var(--title);
+      box-shadow:0 3px 10px rgba(0,0,0,.35);
+    }
+
+    /* Fila expandible del usuario: contiene avatar, nombre y email */
+    .user-info-cell { display:flex; align-items:center; gap:.65rem; width:100%; }
+    .user-info-name  { font-size:.84rem; font-weight:600; letter-spacing:.01em; }
+    .user-info-email { font-size:.67rem; color:var(--muted); margin-top:1px; font-family:var(--mono); }
+
+    /* Flecha ▶ que rota al expandir la fila del usuario */
+    .usr-arrow {
+      margin-left:auto; color:var(--muted); font-size:.65rem;
+      display:inline-block; transition:all .2s ease;
+      flex-shrink:0; font-family:var(--mono);
+    }
+    .usr-arrow.open { transform:rotate(90deg); color:var(--pink); } /* Rotada 90° cuando está abierta */
+
+    /* Filas de la tabla de usuarios */
+    .usr-summary-row { cursor:pointer; } /* La fila principal es clickeable */
+    .usr-summary-row:hover td { background:rgba(255,255,255,.012); }
+    .usr-detail-row td {
+      background:rgba(6,3,12,.6); border-top:none; padding-top:0; /* Detalle expandido con fondo más oscuro */
+    }
+    .usr-detail-grid {
+      /* Cuadrícula de campos de detalle del usuario */
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+      gap:.65rem 1.5rem; padding:.5rem 0 1rem;
+    }
+    .usr-detail-field span {
+      /* Etiqueta del campo (ej: "Cédula", "Cargo") */
+      display:block; font-size:.55rem; font-family:var(--title);
+      color:var(--cyan); text-transform:uppercase;
+      letter-spacing:.12em; margin-bottom:.2rem; opacity:.7;
+    }
+    .usr-detail-field div { font-size:.8rem; font-family:var(--mono); } /* Valor del campo */
+
+    /* Etiquetas de equipos asignados al usuario */
+    .user-equip-tags { display:flex; flex-wrap:wrap; gap:.3rem; margin-top:.2rem; }
+    .equip-tag {
+      background:var(--purple-dim); border:1px solid rgba(180,79,255,.18);
+      border-radius:4px; padding:.18rem .5rem;
+      font-size:.65rem; font-family:var(--mono); color:var(--text-sec);
+      white-space:nowrap; transition:all .2s;
+    }
+    .equip-tag:hover { border-color:var(--purple); color:var(--purple); background:var(--purple-dim); }
+    .equip-tag b { color:var(--text); }
+    .no-equip { font-size:.76rem; color:var(--muted); font-family:var(--mono); } /* Texto cuando no hay equipos */
+
+    /* =====================================================================
+       SECCIÓN DE PERIFÉRICOS (monitor, teclado, mouse, etc.)
+       en el formulario de equipos
+    ===================================================================== */
+    .periph-list { display:flex; flex-direction:column; gap:.45rem; } /* Lista vertical de periféricos */
+    .periph-row {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:8px; padding:.7rem .9rem; transition:all .2s;
+    }
+    /* Cuando el periférico está activado, el borde cambia a cyan */
+    .periph-row.has-item {
+      border-color:rgba(0,232,255,.25);
+      background:rgba(0,232,255,.03);
+      box-shadow:0 0 16px rgba(0,232,255,.06);
+    }
+    .periph-toggle { display:flex; align-items:center; gap:.6rem; cursor:pointer; user-select:none; }
+    .periph-toggle input[type=checkbox] { width:15px; height:15px; accent-color:var(--cyan); cursor:pointer; flex-shrink:0; }
+    .periph-toggle-label { font-size:.8rem; font-weight:500; font-family:var(--mono); }
+    /* Los campos de detalle del periférico se muestran en cuadrícula de 2 columnas */
+    .periph-fields { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-top:.65rem; }
+    .periph-fields input { font-size:.78rem; padding:.45rem .7rem; }
+    .periph-section { grid-column:1/-1; margin-top:0; } /* Ocupa todo el ancho de la cuadrícula */
+
+    /* =====================================================================
+       MODALES / VENTANAS EMERGENTES
+       Estructura: overlay (fondo oscuro) > modal (ventana blanca) > header/body/footer
+    ===================================================================== */
+    .overlay {
+      display:none;                 /* Oculto por defecto */
+      position:fixed; inset:0;      /* Cubre toda la pantalla */
+      background:rgba(2,1,6,.8);    /* Fondo oscuro semi-transparente */
+      backdrop-filter:blur(8px);    /* Desenfoca el contenido de atrás */
+      z-index:200; align-items:center; justify-content:center; padding:1rem;
+    }
+    .overlay.open { display:flex; } /* Clase "open" lo hace visible como flex para centrar el modal */
+    .modal {
+      background:var(--card); border:1px solid var(--border-hi);
+      border-radius:14px; width:100%; max-width:640px; max-height:90vh;
+      overflow-y:auto;              /* Scroll interno si el contenido es muy largo */
+      box-shadow: 0 24px 80px rgba(0,0,0,.6), 0 0 100px rgba(180,79,255,.06);
+      animation:modalIn .25s cubic-bezier(.22,1,.36,1); /* Animación de entrada elástica */
+    }
+    @keyframes modalIn {
+      from { transform:translateY(24px) scale(.97); opacity:0; } /* Empieza pequeño y abajo */
+      to   { transform:translateY(0) scale(1); opacity:1; }      /* Termina en posición normal */
+    }
+    .modal-header {
+      padding:1.1rem 1.4rem; border-bottom:1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between;
+      position:sticky; top:0; background:var(--card); z-index:10; /* El header del modal no hace scroll */
+      border-radius:14px 14px 0 0;
+    }
+    .modal-header h2 {
+      font-size:.78rem; font-family:var(--title);
+      color:var(--cyan); letter-spacing:.14em;
+    }
+    /* Botón de cerrar modal (X) */
+    .modal-close {
+      background:rgba(255,255,255,.04); border:1px solid var(--border);
+      color:var(--muted); cursor:pointer; font-size:.85rem;
+      width:30px; height:30px; border-radius:6px;
+      display:flex; align-items:center; justify-content:center;
+      transition:all .2s;
+    }
+    .modal-close:hover { background:var(--pink-dim); color:var(--pink); border-color:rgba(255,45,120,.3); }
+    .modal-body { padding:1.3rem 1.4rem; } /* Contenido del modal */
+    .modal-footer {
+      padding:.9rem 1.4rem; border-top:1px solid var(--border);
+      display:flex; justify-content:flex-end; gap:.6rem; /* Botones alineados a la derecha */
+      border-radius:0 0 14px 14px;
+    }
+
+    /* =====================================================================
+       FORMULARIOS DENTRO DE LOS MODALES
+    ===================================================================== */
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:.85rem; } /* 2 columnas de campos */
+    .form-group { display:flex; flex-direction:column; gap:.3rem; } /* Grupo label + input */
+    .form-group.full { grid-column:1/-1; } /* Ocupa las 2 columnas (para campos más anchos) */
+    .form-section {
+      /* Separador visual entre secciones del formulario (ej: "Red & Sistema") */
+      grid-column:1/-1; font-size:.58rem; font-family:var(--title);
+      color:var(--text-sec); text-transform:uppercase; letter-spacing:.14em;
+      padding:.55rem 0 .3rem; border-bottom:1px solid var(--border);
+      margin-top:.4rem;
+    }
+    label {
+      font-size:.58rem; font-family:var(--title); color:var(--muted);
+      text-transform:uppercase; letter-spacing:.08em;
+    }
+    /* Estilos compartidos para todos los controles de entrada */
+    input, select, textarea {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:6px; color:var(--text);
+      padding:.55rem .8rem; font-size:.82rem; font-family:var(--mono);
+      transition:all .2s; width:100%;
+    }
+    input::placeholder, textarea::placeholder { color:rgba(110,95,138,.6); }
+    input:focus, select:focus, textarea:focus {
+      outline:none; border-color:rgba(0,232,255,.35);
+      box-shadow:0 0 0 3px rgba(0,232,255,.06);
+      background:var(--card);
+    }
+    textarea { resize:vertical; min-height:64px; } /* El textarea solo se puede redimensionar verticalmente */
+
+    /* =====================================================================
+       SISTEMA DE NOTIFICACIONES TOAST
+       Mensajes pequeños que aparecen en la esquina inferior derecha
+    ===================================================================== */
+    .toast-wrap {
+      position:fixed; bottom:1.25rem; right:1.25rem;
+      z-index:500; display:flex; flex-direction:column; gap:.4rem;
+    }
+    .toast {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:8px; padding:.7rem 1rem;
+      font-size:.78rem; font-family:var(--mono);
+      display:flex; align-items:center; gap:.5rem;
+      animation:toastSlide .25s ease; min-width:220px;
+      box-shadow:0 8px 30px rgba(0,0,0,.4);
+    }
+    @keyframes toastSlide {
+      from { opacity:0; transform:translateX(20px); } /* Entra desde la derecha */
+      to   { opacity:1; transform:translateX(0); }
+    }
+    /* Toast de éxito: borde y brillo cyan */
+    .toast.success {
+      border-left:3px solid var(--cyan);
+      box-shadow:-2px 0 16px rgba(0,232,255,.2), 0 8px 30px rgba(0,0,0,.4);
+    }
+    /* Toast de error: borde y brillo rosa */
+    .toast.error {
+      border-left:3px solid var(--pink);
+      box-shadow:-2px 0 16px rgba(255,45,120,.2), 0 8px 30px rgba(0,0,0,.4);
+    }
+
+    /* =====================================================================
+       ESTILOS PARA IMPORTAR DATOS (modal de backup)
+    ===================================================================== */
+    .backup-step { display:flex; gap:.65rem; align-items:flex-start; margin-bottom:.65rem; }
+    .backup-num {
+      /* Número del paso: cuadrado con gradiente cyan-morado */
+      background:linear-gradient(135deg,var(--cyan),var(--purple));
+      color:#fff; width:20px; height:20px; border-radius:5px;
+      font-size:.6rem; font-weight:700; font-family:var(--title);
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0; margin-top:2px;
+    }
+    /* Zona de arrastrar y soltar archivos */
+    .drop-zone {
+      border:1px dashed rgba(0,232,255,.2); border-radius:10px;
+      padding:1.8rem; text-align:center; cursor:pointer;
+      transition:all .2s; color:var(--muted); font-size:.82rem;
+      font-family:var(--mono); background:rgba(0,232,255,.015);
+    }
+    /* Al arrastrar un archivo encima, el borde y el fondo se iluminan */
+    .drop-zone:hover, .drop-zone.drag {
+      border-color:rgba(0,232,255,.5); color:var(--cyan);
+      background:rgba(0,232,255,.04);
+      box-shadow:0 0 30px rgba(0,232,255,.08);
+    }
+    .drop-zone .dz-icon { font-size:1.8rem; margin-bottom:.4rem; }
+    .import-warning { color:var(--yellow); font-size:.74rem; margin-top:.65rem; text-align:center; font-family:var(--mono); opacity:.8; }
+
+    /* =====================================================================
+       FILAS EXPANDIBLES EN LA TABLA DE EQUIPOS
+    ===================================================================== */
+    .eq-summary-row { cursor:pointer; } /* Fila principal clickeable */
+    .eq-summary-row:hover td { background:rgba(255,255,255,.012); }
+    /* Flecha que rota al expandir */
+    .eq-arrow {
+      display:inline-block; font-size:.65rem; color:var(--muted);
+      transition:all .2s ease; font-family:var(--mono); margin-right:.3rem;
+    }
+    .eq-arrow.open { transform:rotate(90deg); color:var(--cyan); }
+    .eq-detail-row td {
+      background:rgba(4,2,12,.5); border-top:none; padding:0; /* Fondo del detalle expandido */
+    }
+    .eq-detail-inner { padding:.75rem 1rem 1rem; }
+    /* Mini-pestañas dentro del detalle del equipo (Historial / Mantenimientos) */
+    .eq-detail-tabs { display:flex; gap:2px; margin-bottom:.7rem; border-bottom:1px solid var(--border); }
+    .eq-dtab {
+      padding:.3rem .8rem; font-size:.58rem; font-family:var(--title);
+      letter-spacing:.1em; text-transform:uppercase; cursor:pointer;
+      color:var(--muted); background:transparent; border:none; border-radius:4px 4px 0 0;
+      transition:all .18s;
+    }
+    .eq-dtab.active {
+      color:var(--cyan); background:rgba(0,232,255,.06);
+      border-bottom:2px solid var(--cyan); /* Línea inferior que indica pestaña activa */
+    }
+    .eq-dtab:hover:not(.active) { color:var(--text-sec); }
+    .eq-dpanel { display:none; }            /* Panel de contenido oculto por defecto */
+    .eq-dpanel.active { display:block; animation:sectionIn .2s ease; } /* Visible cuando está activo */
+
+    /* =====================================================================
+       HISTORIAL DE ASIGNACIONES (timeline de a quién perteneció el equipo)
+    ===================================================================== */
+    .hist-empty { color:var(--muted); font-family:var(--mono); font-size:.74rem; padding:.5rem 0; }
+    .hist-list { display:flex; flex-direction:column; gap:.4rem; }
+    .hist-item {
+      display:grid; grid-template-columns:auto 1fr auto;
+      gap:.55rem; align-items:start;
+      background:var(--purple-dim); border:1px solid rgba(180,79,255,.15);
+      border-left:3px solid var(--purple); /* Línea izquierda morada como indicador de timeline */
+      border-radius:6px; padding:.5rem .75rem;
+    }
+    .hist-dot { width:7px; height:7px; border-radius:50%; background:var(--purple); margin-top:.3rem; flex-shrink:0; } /* Punto del timeline */
+    .hist-body { font-size:.76rem; }
+    .hist-body b { color:var(--text); font-family:var(--sans); }
+    .hist-body span { color:var(--muted); font-family:var(--mono); font-size:.66rem; display:block; margin-top:.1rem; }
+    .hist-dates { font-family:var(--mono); font-size:.66rem; color:var(--muted); text-align:right; white-space:nowrap; }
+    .hist-dates .active-badge { color:var(--cyan); display:block; font-weight:600; } /* "ACTIVO" en cyan */
+
+    /* =====================================================================
+       LISTA MINI DE MANTENIMIENTOS (dentro del detalle del equipo)
+    ===================================================================== */
+    .mnt-mini-list { display:flex; flex-direction:column; gap:.35rem; }
+    .mnt-mini-item {
+      display:flex; align-items:center; gap:.5rem;
+      background:var(--pink-dim); border:1px solid rgba(255,45,120,.12);
+      border-left:3px solid var(--pink); /* Línea izquierda rosa */
+      border-radius:6px;
+      padding:.4rem .65rem; font-size:.74rem;
+    }
+    .mnt-mini-item .mnt-tipo { font-family:var(--title); font-size:.56rem; letter-spacing:.06em; color:var(--pink); }
+    .mnt-mini-item .mnt-fecha { font-family:var(--mono); font-size:.66rem; color:var(--muted); margin-left:auto; } /* Fecha al extremo derecho */
+
+    /* =====================================================================
+       TARJETAS DE ESTADÍSTICAS DE MANTENIMIENTOS
+    ===================================================================== */
+    .mnt-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.75rem; margin-bottom:1.25rem; }
+    .mnt-stat-card {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:10px; padding:.9rem 1rem; position:relative; overflow:hidden;
+    }
+    /* Línea de color en la parte superior de cada tarjeta (diferente color por tipo) */
+    .mnt-stat-card::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    }
+    .mnt-stat-card.c-pink::before { background:linear-gradient(90deg,var(--pink),transparent); }
+    .mnt-stat-card.c-cyan::before { background:linear-gradient(90deg,var(--cyan),transparent); }
+    .mnt-stat-card.c-purp::before { background:linear-gradient(90deg,var(--purple),transparent); }
+    .mnt-stat-card.c-yell::before { background:linear-gradient(90deg,var(--yellow),transparent); }
+    /* Número grande con color y brillo "neon" */
+    .mnt-stat-card.c-pink .mnt-stat-num { color:var(--pink); text-shadow:0 0 20px rgba(255,45,120,.3); }
+    .mnt-stat-card.c-cyan .mnt-stat-num { color:var(--cyan); text-shadow:0 0 20px rgba(0,232,255,.3); }
+    .mnt-stat-card.c-purp .mnt-stat-num { color:var(--purple); text-shadow:0 0 20px rgba(180,79,255,.3); }
+    .mnt-stat-card.c-yell .mnt-stat-num { color:var(--yellow); text-shadow:0 0 20px rgba(255,225,53,.3); }
+    .mnt-stat-num { font-family:var(--title); font-size:1.8rem; font-weight:700; line-height:1; }
+    .mnt-stat-label { font-family:var(--mono); font-size:.58rem; letter-spacing:.08em; color:var(--muted); margin-top:.25rem; text-transform:uppercase; }
+
+    /* Badges específicos para tipos y estados de mantenimiento */
+    .badge-mnt-prev { background:var(--cyan-dim);   color:var(--cyan);   border:1px solid rgba(0,232,255,.2); }  /* Preventivo */
+    .badge-mnt-corr { background:var(--pink-dim);   color:var(--pink);   border:1px solid rgba(255,45,120,.2); } /* Correctivo */
+    .badge-mnt-limp { background:var(--purple-dim);  color:var(--purple); border:1px solid rgba(180,79,255,.2); } /* Limpieza */
+    .badge-mnt-act  { background:var(--yellow-dim);  color:var(--yellow); border:1px solid rgba(255,225,53,.2); } /* Actualización */
+    .badge-mnt-pend { background:var(--yellow-dim);  color:var(--yellow); border:1px solid rgba(255,225,53,.2); } /* Pendiente */
+    .badge-mnt-proc { background:var(--cyan-dim);   color:var(--cyan);   border:1px solid rgba(0,232,255,.2); }  /* En Proceso */
+    .badge-mnt-comp { background:var(--green-dim);  color:var(--green);  border:1px solid rgba(79,255,176,.2); } /* Completado */
+
+    /* =====================================================================
+       DISEÑO RESPONSIVO: ajustes para pantallas pequeñas (móviles)
+    ===================================================================== */
+    @media (max-width:768px) {
+      main { padding:1rem; }          /* Menos padding en móvil */
+      header { padding:0 1rem; }
+      .form-grid { grid-template-columns:1fr; } /* Formulario en 1 sola columna */
+      .tabs { flex-wrap:wrap; }       /* Las pestañas se apilan */
+      .tab { font-size:.55rem; padding:.5rem .6rem; } /* Texto de pestañas más pequeño */
+      .toolbar { gap:.5rem; }
+    }
+  </style>
+</head>
+
+<body>
+<!-- Cuerpo visible de la página -->
+
+<!-- Capa de fondo con las esferas de luz animadas -->
+<div class="bg-layer"></div>
+
+<!-- Capa con la cuadrícula de líneas finas -->
+<div class="bg-grid"></div>
+
+<!-- Capa que oscurece los bordes (viñeta) -->
+<div class="bg-vignette"></div>
+
+<!-- =========================================================
+     BARRA DE NAVEGACIÓN SUPERIOR
+     Contiene los botones de Importar y Exportar datos
+========================================================= -->
+<header>
+  <!-- Espacio vacío del lado izquierdo (el logo fue removido del HTML aunque su CSS persiste) -->
+  </div>
+  <div class="hdr-right">
+    <!-- Botón que abre el modal para importar un archivo JSON -->
+    <button class="btn btn-secondary" onclick="openModal('backup')">📥 Importar</button>
+    <!-- Botón que llama la función para descargar los datos como archivo JSON -->
+    <button class="btn btn-secondary" onclick="exportarDatos()">💾 Exportar</button>
+  </div>
+</header>
+
+<!-- =========================================================
+     CONTENIDO PRINCIPAL DE LA APP
+========================================================= -->
+<main>
+
+  <!-- Barra de pestañas para navegar entre módulos
+       Cada pestaña llama a switchTab() con el nombre del módulo -->
+  <div class="tabs">
+    <div class="tab" onclick="switchTab('usuarios')">👥 Usuarios</div>
+    <div class="tab" onclick="switchTab('equipos')">🖥️ Equipos</div>
+    <div class="tab" onclick="switchTab('asignaciones')">🔗 Asignaciones</div>
+    <div class="tab" onclick="switchTab('mantenimientos')">🔧 Mantenimientos</div>
+  </div>
+
+  <!-- ===========================================================
+       SECCIÓN: USUARIOS
+       Tabla con búsqueda, filtro por departamento y botón nuevo usuario
+  =========================================================== -->
+  <div id="tab-usuarios" class="section">
+    <div class="toolbar">
+      <div class="search-box">
+        <!-- Campo de búsqueda: cada vez que el usuario escribe, llama renderUsuarios() -->
+        <input type="text" id="usr-search" placeholder="Buscar usuario..." oninput="renderUsuarios()">
+      </div>
+      <!-- Dropdown para filtrar por departamento, se repobla dinámicamente con JS -->
+      <select class="filter" id="usr-filter-dep" onchange="renderUsuarios()">
+        <option value="">Todos los departamentos</option>
+      </select>
+      <!-- Abre el modal para crear un nuevo usuario -->
+      <button class="btn btn-primary" onclick="openModal('usuario')">+ Nuevo Usuario</button>
+    </div>
+    <div class="users-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px">#</th>  <!-- Número de fila -->
+            <th>Usuario</th>               <!-- Nombre y email -->
+            <th style="width:200px">Acciones</th> <!-- Botones de editar/eliminar -->
+          </tr>
+        </thead>
+        <!-- Las filas se generan dinámicamente con JavaScript -->
+        <tbody id="users-grid"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===========================================================
+       SECCIÓN: EQUIPOS
+       Tabla con búsqueda, filtro por tipo y estado, y botón nuevo equipo
+  =========================================================== -->
+  <div id="tab-equipos" class="section">
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="eq-search" placeholder="Buscar por marca, serial, activo..." oninput="renderEquipos()">
+      </div>
+      <!-- Filtro por tipo de equipo (PC, Laptop, Monitor, etc.) -->
+      <select class="filter" id="eq-filter-tipo" onchange="renderEquipos()">
+        <option value="">Todos los tipos</option>
+        <option>PC Escritorio</option>
+        <option>Laptop</option>
+        <option>Monitor</option>
+        <option>Impresora</option>
+        <option>Escáner</option>
+        <option>UPS</option>
+        <option>Teléfono IP</option>
+        <option>Otro</option>
+      </select>
+      <!-- Filtro por estado del equipo (Activo, En Bodega, Baja) -->
+      <select class="filter" id="eq-filter-estado" onchange="renderEquipos()">
+        <option value="">Todos los estados</option>
+        <option>Activo</option>
+        <option>En Bodega</option>
+        <option>Baja</option>
+      </select>
+      <button class="btn btn-primary" onclick="openModal('equipo')">+ Nuevo Equipo</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Tipo</th><th>Marca</th><th>Modelo</th>
+            <th>Serial</th><th>Activo Fijo</th><th>Estado</th>
+            <th>Periféricos</th><th>Asignado a / Info</th>
+          </tr>
+        </thead>
+        <!-- Filas generadas por JavaScript mediante renderEquipos() -->
+        <tbody id="eq-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===========================================================
+       SECCIÓN: ASIGNACIONES
+       Muestra qué equipo tiene cada usuario actualmente
+  =========================================================== -->
+  <div id="tab-asignaciones" class="section">
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="asig-search" placeholder="Buscar..." oninput="renderAsignaciones()">
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Usuario</th><th>SIESA</th><th>Departamento</th>
+            <th>Equipo</th><th>Tipo</th><th>Serial</th>
+            <th>Activo Fijo</th><th>Fecha Asig.</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <!-- Filas generadas por renderAsignaciones() -->
+        <tbody id="asig-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===========================================================
+       SECCIÓN: MANTENIMIENTOS
+       Dashboard con 4 contadores + tabla filtrable
+  =========================================================== -->
+  <div id="tab-mantenimientos" class="section">
+    <!-- Tarjetas de estadísticas en la parte superior -->
+    <div class="mnt-stats">
+      <!-- Cada tarjeta muestra un número actualizado por renderMantenimientos() -->
+      <div class="mnt-stat-card c-pink"><div class="mnt-stat-num" id="mnt-total">0</div><div class="mnt-stat-label">Total Registros</div></div>
+      <div class="mnt-stat-card c-yell"><div class="mnt-stat-num" id="mnt-pend">0</div><div class="mnt-stat-label">Pendientes</div></div>
+      <div class="mnt-stat-card c-cyan"><div class="mnt-stat-num" id="mnt-proc">0</div><div class="mnt-stat-label">En Proceso</div></div>
+      <div class="mnt-stat-card c-purp"><div class="mnt-stat-num" id="mnt-comp">0</div><div class="mnt-stat-label">Completados</div></div>
+    </div>
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="mnt-search" placeholder="Buscar por equipo, técnico, descripción..." oninput="renderMantenimientos()">
+      </div>
+      <select class="filter" id="mnt-filter-tipo" onchange="renderMantenimientos()">
+        <option value="">Todos los tipos</option>
+        <option>Preventivo</option><option>Correctivo</option>
+        <option>Limpieza</option><option>Actualización</option>
+      </select>
+      <select class="filter" id="mnt-filter-estado" onchange="renderMantenimientos()">
+        <option value="">Todos los estados</option>
+        <option>Pendiente</option><option>En Proceso</option><option>Completado</option>
+      </select>
+      <button class="btn btn-primary" onclick="openModal('mantenimiento')">+ Nuevo Mantenimiento</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Equipo</th><th>Tipo</th><th>Estado</th>
+            <th>Fecha</th><th>Técnico</th><th>Descripción</th><th>Costo</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <!-- Filas generadas por renderMantenimientos() -->
+        <tbody id="mnt-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<!-- ===========================================================
+     MODAL: NUEVO / EDITAR MANTENIMIENTO
+     Ventana emergente para registrar mantenimientos
+=========================================================== -->
+<div class="overlay" id="modal-mantenimiento">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header">
+      <!-- El título cambia según si es nuevo o edición (lo hace JS) -->
+      <h2 id="modal-mnt-title">NUEVO MANTENIMIENTO</h2>
+      <button class="modal-close" onclick="closeModal('mantenimiento')">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Campo oculto que guarda el ID del mantenimiento al editar (vacío si es nuevo) -->
+      <input type="hidden" id="mnt-id">
+      <div class="form-grid">
+        <div class="form-section">🔧 Datos del Mantenimiento</div>
+        <div class="form-group">
+          <label>Equipo *</label>
+          <!-- Se rellena con la lista de equipos desde JavaScript -->
+          <select id="mnt-equipo"></select>
+        </div>
+        <div class="form-group">
+          <label>Tipo *</label>
+          <select id="mnt-tipo">
+            <option value="">Seleccionar...</option>
+            <option>Preventivo</option><option>Correctivo</option>
+            <option>Limpieza</option><option>Actualización</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Estado *</label>
+          <select id="mnt-estado">
+            <option>Pendiente</option><option>En Proceso</option><option>Completado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fecha *</label>
+          <input type="date" id="mnt-fecha"> <!-- Input de fecha nativo del navegador -->
+        </div>
+        <div class="form-group full">
+          <label>Técnico Responsable</label>
+          <input type="text" id="mnt-tecnico" placeholder="Nombre del técnico...">
+        </div>
+        <div class="form-group full">
+          <label>Descripción del Trabajo *</label>
+          <!-- Área de texto multilínea para describir el mantenimiento -->
+          <textarea id="mnt-descripcion" placeholder="Detalla el trabajo realizado o a realizar..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Costo ($ opcional)</label>
+          <input type="number" id="mnt-costo" placeholder="0"> <!-- Solo acepta números -->
+        </div>
+        <div class="form-group">
+          <label>Observaciones</label>
+          <input type="text" id="mnt-obs" placeholder="Notas adicionales...">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('mantenimiento')">Cancelar</button>
+      <!-- Llama saveMantenimiento() para validar y guardar -->
+      <button class="btn btn-primary" onclick="saveMantenimiento()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===========================================================
+     MODAL: NUEVO / EDITAR EQUIPO
+     Formulario extenso con secciones para datos, red y periféricos
+=========================================================== -->
+<div class="overlay" id="modal-equipo">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <h2 id="modal-equipo-title">NUEVO EQUIPO</h2>
+      <button class="modal-close" onclick="closeModal('equipo')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="eq-id"> <!-- ID oculto del equipo (para saber si es edición) -->
+      <div class="form-grid">
+        <div class="form-section">🖥️ Información del Equipo</div>
+        <!-- Tipo de equipo -->
+        <div class="form-group">
+          <label>Tipo de Equipo *</label>
+          <select id="eq-tipo">
+            <option value="">Seleccionar...</option>
+            <option>PC Escritorio</option><option>Laptop</option><option>Monitor</option>
+            <option>Impresora</option><option>Escáner</option><option>UPS</option>
+            <option>Teléfono IP</option><option>Otro</option>
+          </select>
+        </div>
+        <!-- Estado del equipo -->
+        <div class="form-group">
+          <label>Estado *</label>
+          <select id="eq-estado">
+            <option>Activo</option><option>En Bodega</option><option>Baja</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Marca *</label><input type="text" id="eq-marca" placeholder="Dell, HP, Lenovo..."></div>
+        <div class="form-group"><label>Modelo</label><input type="text" id="eq-modelo" placeholder="OptiPlex 7090..."></div>
+        <div class="form-group"><label>Serial Fabricante *</label><input type="text" id="eq-serial" placeholder="SN-XXXXXXXXXX"></div>
+        <div class="form-group"><label>Activo Fijo (Empresa) *</label><input type="text" id="eq-activo" placeholder="AF-2024-001"></div>
+        <div class="form-group"><label>Procesador / Spec</label><input type="text" id="eq-spec" placeholder="i7-12700, 16GB RAM..."></div>
+        <div class="form-group"><label>Disco Duro</label><input type="text" id="eq-disco" placeholder="1TB SSD NVMe, HDD 2TB..."></div>
+        <div class="form-group"><label>Memoria RAM</label><input type="text" id="eq-ram" placeholder="16GB DDR4 3200MHz..."></div>
+        <div class="form-group"><label>Fecha de Compra</label><input type="date" id="eq-fecha"></div>
+        <div class="form-group"><label>Valor ($)</label><input type="number" id="eq-valor" placeholder="0"></div>
+        <div class="form-group"><label>Ubicación</label><input type="text" id="eq-ubicacion" placeholder="Piso 2, Sala A..."></div>
+        <div class="form-group full"><label>Observaciones</label><textarea id="eq-obs" placeholder="Notas adicionales..."></textarea></div>
+
+        <!-- Sección para datos de red del equipo -->
+        <div class="form-section">🌐 Red & Sistema</div>
+        <div class="form-group"><label>Nombre del Equipo</label><input type="text" id="eq-hostname" placeholder="PC-CONTAB-01"></div>
+        <div class="form-group"><label>IP Cable (LAN)</label><input type="text" id="eq-ip-cable" placeholder="192.168.1.100"></div>
+        <div class="form-group"><label>IP WiFi (WLAN)</label><input type="text" id="eq-ip-wifi" placeholder="192.168.1.150"></div>
+
+        <!-- Sección para asignar el equipo a un usuario desde el mismo formulario -->
+        <div class="form-section">👤 Asignar a Usuario</div>
+        <div class="form-group">
+          <label>Usuario</label>
+          <!-- Se rellena con todos los usuarios desde JS; vacío = sin asignar -->
+          <select id="eq-asign-usuario"><option value="">— Sin asignar (queda en Bodega) —</option></select>
+        </div>
+        <div class="form-group"><label>Fecha Asignación</label><input type="date" id="eq-asign-fecha"></div>
+        <div class="form-group"><label>Entregado por</label><input type="text" id="eq-asign-entrega" placeholder="Responsable TI..."></div>
+        <div class="form-group"><label>Obs. entrega</label><input type="text" id="eq-asign-obs" placeholder="Estado del equipo..."></div>
+
+        <!-- Sección de periféricos: cada uno tiene un checkbox que activa sus campos -->
+        <div class="form-section">🔌 Periféricos incluidos</div>
+        <div class="periph-section">
+          <div class="periph-list">
+
+            <!-- Periférico: Monitor -->
+            <div class="periph-row" id="pr-monitor">
+              <!-- Checkbox: al marcarlo, togglePeriph('monitor') muestra los campos de abajo -->
+              <label class="periph-toggle"><input type="checkbox" id="chk-monitor" onchange="togglePeriph('monitor')"><span class="periph-toggle-label">🖥️ Monitor</span></label>
+              <!-- Campos ocultos que aparecen al activar el checkbox -->
+              <div class="periph-fields" id="pf-monitor" style="display:none">
+                <div class="form-group"><label>Marca</label><input type="text" id="p-monitor-marca" placeholder="LG, Samsung, Dell..."></div>
+                <div class="form-group"><label>Serial</label><input type="text" id="p-monitor-serial" placeholder="SN-..."></div>
+                <div class="form-group"><label>Activo Fijo</label><input type="text" id="p-monitor-activo" placeholder="AF-..."></div>
+                <div class="form-group"><label>Referencia (opcional)</label><input type="text" id="p-monitor-obs" placeholder="27&quot; FHD, resolución..."></div>
+              </div>
+            </div>
+
+            <!-- Periférico: Teclado -->
+            <div class="periph-row" id="pr-teclado">
+              <label class="periph-toggle"><input type="checkbox" id="chk-teclado" onchange="togglePeriph('teclado')"><span class="periph-toggle-label">⌨️ Teclado</span></label>
+              <div class="periph-fields" id="pf-teclado" style="display:none">
+                <div class="form-group"><label>Marca/Modelo</label><input type="text" id="p-teclado-marca" placeholder="Logitech K120..."></div>
+                <div class="form-group"><label>Serial</label><input type="text" id="p-teclado-serial" placeholder="SN-..."></div>
+                <div class="form-group"><label>Activo Fijo</label><input type="text" id="p-teclado-activo" placeholder="AF-..."></div>
+                <div class="form-group"><label>Nota</label><input type="text" id="p-teclado-obs" placeholder="USB, inalámbrico..."></div>
+              </div>
+            </div>
+
+            <!-- Periférico: Mouse -->
+            <div class="periph-row" id="pr-mouse">
+              <label class="periph-toggle"><input type="checkbox" id="chk-mouse" onchange="togglePeriph('mouse')"><span class="periph-toggle-label">🖱️ Mouse</span></label>
+              <div class="periph-fields" id="pf-mouse" style="display:none">
+                <div class="form-group"><label>Marca/Modelo</label><input type="text" id="p-mouse-marca" placeholder="Logitech M185..."></div>
+                <div class="form-group"><label>Serial</label><input type="text" id="p-mouse-serial" placeholder="SN-..."></div>
+                <div class="form-group"><label>Activo Fijo</label><input type="text" id="p-mouse-activo" placeholder="AF-..."></div>
+                <div class="form-group"><label>Nota</label><input type="text" id="p-mouse-obs" placeholder="Inalámbrico..."></div>
+              </div>
+            </div>
+
+            <!-- Periférico: Diadema / Headset -->
+            <div class="periph-row" id="pr-diadema">
+              <label class="periph-toggle"><input type="checkbox" id="chk-diadema" onchange="togglePeriph('diadema')"><span class="periph-toggle-label">🎧 Diadema / Headset</span></label>
+              <div class="periph-fields" id="pf-diadema" style="display:none">
+                <div class="form-group"><label>Marca/Modelo</label><input type="text" id="p-diadema-marca" placeholder="Jabra, Plantronics..."></div>
+                <div class="form-group"><label>Serial</label><input type="text" id="p-diadema-serial" placeholder="SN-..."></div>
+                <div class="form-group"><label>Activo Fijo</label><input type="text" id="p-diadema-activo" placeholder="AF-..."></div>
+                <div class="form-group"><label>Nota</label><input type="text" id="p-diadema-obs" placeholder="Con micrófono..."></div>
+              </div>
+            </div>
+
+            <!-- Periférico: Base Refrigerante -->
+            <div class="periph-row" id="pr-base">
+              <label class="periph-toggle"><input type="checkbox" id="chk-base" onchange="togglePeriph('base')"><span class="periph-toggle-label">❄️ Base Refrigerante</span></label>
+              <div class="periph-fields" id="pf-base" style="display:none">
+                <div class="form-group"><label>Marca/Modelo</label><input type="text" id="p-base-marca" placeholder="Cooler Master..."></div>
+                <div class="form-group"><label>Serial</label><input type="text" id="p-base-serial" placeholder="SN-..."></div>
+                <div class="form-group"><label>Activo Fijo</label><input type="text" id="p-base-activo" placeholder="AF-..."></div>
+                <div class="form-group"><label>Nota</label><input type="text" id="p-base-obs" placeholder="# ventiladores..."></div>
+              </div>
+            </div>
+
+            <!-- Periférico: Celular Corporativo -->
+            <div class="periph-row" id="pr-celular">
+              <label class="periph-toggle"><input type="checkbox" id="chk-celular" onchange="togglePeriph('celular')"><span class="periph-toggle-label">📱 Celular Corporativo</span></label>
+              <div class="periph-fields" id="pf-celular" style="display:none">
+                <div class="form-group"><label>Marca/Modelo</label><input type="text" id="p-celular-marca" placeholder="Samsung A54..."></div>
+                <div class="form-group"><label>IMEI / Serial</label><input type="text" id="p-celular-serial" placeholder="IMEI: 35..."></div>
+                <div class="form-group"><label>Activo Fijo</label><input type="text" id="p-celular-activo" placeholder="AF-..."></div>
+                <div class="form-group"><label>Número / SIM</label><input type="text" id="p-celular-obs" placeholder="+57 300 000 0000"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('equipo')">Cancelar</button>
+      <!-- Llama saveEquipo() para validar, guardar el equipo y la asignación -->
+      <button class="btn btn-primary" onclick="saveEquipo()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===========================================================
+     MODAL: NUEVO / EDITAR USUARIO
+========================================================== -->
+<div class="overlay" id="modal-usuario">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-usuario-title">NUEVO USUARIO</h2>
+      <button class="modal-close" onclick="closeModal('usuario')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="usr-id"> <!-- ID oculto para saber si es edición -->
+      <div class="form-grid">
+        <div class="form-group"><label>Nombre *</label><input type="text" id="usr-nombre" placeholder="Juan"></div>
+        <div class="form-group"><label>Apellido *</label><input type="text" id="usr-apellido" placeholder="Pérez"></div>
+        <div class="form-group"><label>Cédula / ID</label><input type="text" id="usr-cedula" placeholder="12345678"></div>
+        <div class="form-group"><label>Cargo</label><input type="text" id="usr-cargo" placeholder="Analista TI"></div>
+        <div class="form-group">
+          <label>Departamento</label>
+          <!-- input con autocompletado: 'list' conecta con el datalist de abajo -->
+          <input type="text" id="usr-depto" placeholder="Tecnología" list="depto-list">
+          <!-- Datalist: se rellena con los departamentos ya existentes para sugerir -->
+          <datalist id="depto-list"></datalist>
+        </div>
+        <div class="form-group"><label>Usuario SIESA</label><input type="text" id="usr-siesa" placeholder="jperez / 1001"></div>
+        <div class="form-group"><label>Email</label><input type="email" id="usr-email" placeholder="juan@empresa.com"></div>
+        <div class="form-group"><label>Teléfono</label><input type="text" id="usr-tel" placeholder="+57 300 000 0000"></div>
+        <div class="form-group"><label>Sede / Oficina</label><input type="text" id="usr-sede" placeholder="Principal"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('usuario')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveUsuario()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===========================================================
+     MODAL: IMPORTAR DATOS DESDE ARCHIVO JSON
+========================================================== -->
+<div class="overlay" id="modal-backup">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <h2>IMPORTAR DATOS</h2>
+      <button class="modal-close" onclick="closeModal('backup')">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Instrucciones paso a paso para el usuario -->
+      <div style="margin-bottom:1rem;font-size:.8rem;color:var(--text-sec)">
+        <div class="backup-step"><div class="backup-num">1</div><div>En el otro PC haz clic en <b style="color:var(--text)">💾 Exportar datos</b> para descargar el archivo <b style="color:var(--text)">.json</b>.</div></div>
+        <div class="backup-step"><div class="backup-num">2</div><div>Copia ese archivo a este computador (USB, correo, Google Drive...).</div></div>
+        <div class="backup-step"><div class="backup-num">3</div><div>Arrástralo aquí abajo o haz clic para buscarlo.</div></div>
+      </div>
+      <!-- Zona de drag & drop: acepta archivos arrastrados o clic para buscar -->
+      <div class="drop-zone"
+        onclick="document.getElementById('file-import').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="handleDrop(event)">
+        <div class="dz-icon">📁</div>
+        <div>Arrastra tu archivo <b>inventario_TI_*.json</b></div>
+        <div style="font-size:.7rem;margin-top:.2rem;opacity:.7">o haz clic para buscar</div>
+      </div>
+      <!-- Input de archivo real, oculto; es activado por la drop-zone al hacer clic -->
+      <input type="file" id="file-import" accept=".json" style="display:none" onchange="handleFileImport(this)">
+      <!-- Advertencia en amarillo de que los datos actuales se reemplazarán -->
+      <div class="import-warning">⚠️ Los datos actuales serán reemplazados por los del archivo importado.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Contenedor de notificaciones toast; los toasts se insertan aquí con JS -->
+<div class="toast-wrap" id="toasts"></div>
+
+<!-- ===========================================================
+     JAVASCRIPT: Toda la lógica de la aplicación
+========================================================== -->
+<script>
+  // =====================================================================
+  // ESTADO GLOBAL DE LA APLICACIÓN
+  // Se carga desde localStorage al iniciar la página.
+  // Si no hay datos guardados, inicia con arrays vacíos.
+  // =====================================================================
+  let state = JSON.parse(localStorage.getItem('it_inventory') || 'null') || {
+    equipos: [],              // Lista de todos los equipos registrados
+    usuarios: [],             // Lista de todos los usuarios
+    asignaciones: [],         // Asignaciones activas (qué equipo tiene cada usuario)
+    mantenimientos: [],       // Registros de mantenimiento
+    historialAsignaciones: [] // Historial de asignaciones pasadas (cuando se quita un equipo)
+  };
+
+  // Compatibilidad: agrega arrays que pueden no existir en datos guardados con versión anterior
+  if(!state.mantenimientos)        state.mantenimientos=[];
+  if(!state.historialAsignaciones) state.historialAsignaciones=[];
+
+  // Migración de datos: en versiones antiguas, la asignación estaba dentro del objeto equipo.
+  // Aquí se extrae y se mueve al array de asignaciones para mantener consistencia.
+  state.equipos.forEach(e => {
+    if (e.asignacion && e.asignacion.usuarioId) {
+      const exists = state.asignaciones.find(a => a.equipoId === e.id); // Verifica si ya se migró
+      if (!exists) state.asignaciones.push({ id: uid(), equipoId: e.id, ...e.asignacion }); // Migra
+      delete e.asignacion; // Elimina el dato viejo del equipo
+    }
+  });
+
+  // =====================================================================
+  // CONSTANTES Y CONFIGURACIÓN
+  // =====================================================================
+  const COLORS = ['#ff2d78','#00e8ff','#b44fff','#ffe135','#ff6eb4','#7effee'];
+  // Paleta de colores para los avatares de usuarios
+
+  const PERIPH_ICONS = { monitor:'🖥️', teclado:'⌨️', mouse:'🖱️', diadema:'🎧', base:'❄️', celular:'📱' };
+  // Emojis representativos de cada tipo de periférico
+
+  const PERIPH_NAMES = { monitor:'Monitor', teclado:'Teclado', mouse:'Mouse', diadema:'Diadema', base:'Base Refrig.', celular:'Celular Corp.' };
+  // Nombres legibles de cada periférico (para tooltips)
+
+  const PERIPHS = ['monitor','teclado','mouse','diadema','base','celular'];
+  // Array con las claves de todos los periféricos, para iterar sobre ellos
+
+  // =====================================================================
+  // FUNCIONES DE UTILIDAD
+  // =====================================================================
+
+  // Devuelve un color de la paleta basado en el primer carácter del nombre
+  // Así cada usuario siempre tiene el mismo color de avatar
+  function avatarColor(n) {
+    const i = ((n||'').charCodeAt(0) + ((n||'').charCodeAt(1)||0)) % COLORS.length;
+    return COLORS[i];
+  }
+
+  // Genera las iniciales de un usuario: primera letra del nombre + primera del apellido
+  function initials(n, a) {
+    return ((n||'')[0]||'').toUpperCase() + ((a||'')[0]||'').toUpperCase();
+  }
+
+  // Genera un ID único usando timestamp + número aleatorio (ej: "lx4f3abb")
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+  // Guarda el estado completo en localStorage del navegador
+  function save() { localStorage.setItem('it_inventory', JSON.stringify(state)); }
+
+  // Muestra una notificación temporal en la esquina inferior derecha
+  function toast(msg, type='success') {
+    const t = document.createElement('div');   // Crea el elemento DOM
+    t.className = `toast ${type}`;             // Aplica clase según tipo (success/error)
+    t.innerHTML = (type==='success'?'✅':'❌') + ' ' + msg; // Ícono + mensaje
+    document.getElementById('toasts').appendChild(t); // Lo agrega al contenedor
+    setTimeout(() => t.remove(), 3000); // Lo elimina automáticamente después de 3 segundos
+  }
+
+  // =====================================================================
+  // NAVEGACIÓN POR PESTAÑAS
+  // =====================================================================
+
+  // Cambia la pestaña activa y renderiza la sección correspondiente
+  function switchTab(name) {
+    const names = ['usuarios','equipos','asignaciones','mantenimientos'];
+    // Marca la pestaña correcta como active y desmarca las demás
+    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', names[i]===name));
+    // Oculta todas las secciones
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    // Muestra solo la sección seleccionada
+    document.getElementById('tab-'+name).classList.add('active');
+    // Llama la función de renderizado específica de cada módulo
+    if (name==='equipos')        renderEquipos();
+    if (name==='usuarios')       renderUsuarios();
+    if (name==='asignaciones')   renderAsignaciones();
+    if (name==='mantenimientos') renderMantenimientos();
+  }
+
+  // =====================================================================
+  // EQUIPOS: EXPANSIÓN DE FILAS (Historial + Mantenimientos)
+  // =====================================================================
+
+  // Alterna la fila de detalle expandida de un equipo
+  function toggleEquipoRow(id) {
+    const detail = document.getElementById('eq-detail-'+id); // Fila de detalle
+    const arrow  = document.getElementById('eq-arrow-'+id);  // Flecha indicadora
+    const isOpen = detail.style.display !== 'none';          // ¿Está abierta?
+    detail.style.display = isOpen ? 'none' : 'table-row';   // Alterna visibilidad
+    arrow.classList.toggle('open', !isOpen);                 // Rota la flecha
+    if (!isOpen) renderEqDetail(id); // Solo carga el detalle al abrir (por eficiencia)
+  }
+
+  // Cambia entre las sub-pestañas "Historial" y "Mantenimientos" dentro del detalle del equipo
+  function switchEqTab(equipoId, tab) {
+    ['hist','mnt'].forEach(t => {
+      document.getElementById('eqdp-'+t+'-'+equipoId).classList.toggle('active', t===tab); // Panel
+      document.getElementById('eqdt-'+t+'-'+equipoId).classList.toggle('active', t===tab); // Botón pestaña
+    });
+  }
+
+  // Renderiza el contenido del detalle expandido de un equipo
+  function renderEqDetail(equipoId) {
+    // Filtra el historial de asignaciones de este equipo específico
+    const hist = state.historialAsignaciones.filter(h=>h.equipoId===equipoId);
+    // Busca la asignación activa actual del equipo
+    const actAsig = state.asignaciones.find(a=>a.equipoId===equipoId);
+    const histEl = document.getElementById('eqdp-hist-'+equipoId); // Contenedor del panel
+    let histHtml = '';
+    // Si hay asignación activa, muestra primero al usuario actual con badge "ACTIVO"
+    if (actAsig) {
+      const u = state.usuarios.find(x=>x.id===actAsig.usuarioId);
+      histHtml += `<div class="hist-item">
+        <div class="hist-dot" style="background:var(--cyan)"></div>
+        <div class="hist-body"><b>${u?u.nombre+' '+u.apellido:'Usuario eliminado'}</b>
+          <span>${u?.cargo||''} ${u?.depto?'· '+u.depto:''}</span>
+          ${actAsig.entrega?`<span>Entregado por: ${actAsig.entrega}</span>`:''}
+        </div>
+        <div class="hist-dates"><span class="active-badge">● ACTIVO</span>${actAsig.fecha||'Sin fecha'}</div>
+      </div>`;
+    }
+    // Luego muestra el historial pasado, ordenado del más reciente al más antiguo
+    hist.sort((a,b)=>b.fechaFin>a.fechaFin?1:-1).forEach(h => {
+      const u = state.usuarios.find(x=>x.id===h.usuarioId);
+      histHtml += `<div class="hist-item" style="border-left-color:var(--muted);opacity:.75">
+        <div class="hist-dot" style="background:var(--muted)"></div>
+        <div class="hist-body"><b>${u?u.nombre+' '+u.apellido:'Usuario eliminado'}</b>
+          <span>${u?.cargo||''} ${u?.depto?'· '+u.depto:''}</span>
+          ${h.entrega?`<span>Entregado por: ${h.entrega}</span>`:''}
+        </div>
+        <div class="hist-dates">${h.fechaInicio||'?'} → ${h.fechaFin||'?'}</div>
+      </div>`;
+    });
+    // Inserta el HTML generado o un mensaje de "Sin historial"
+    histEl.innerHTML = histHtml
+      ? `<div class="hist-list">${histHtml}</div>`
+      : '<div class="hist-empty">Sin historial de asignaciones</div>';
+
+    // Panel de mantenimientos: filtra y renderiza los del equipo actual
+    const mnts = state.mantenimientos.filter(m=>m.equipoId===equipoId);
+    const mntEl = document.getElementById('eqdp-mnt-'+equipoId);
+    mntEl.innerHTML = mnts.length
+      ? `<div class="mnt-mini-list">${mnts.sort((a,b)=>b.fecha>a.fecha?1:-1).map(m=>`
+          <div class="mnt-mini-item">
+            <span class="mnt-tipo">${m.tipo}</span>
+            <span style="font-size:.74rem">${m.descripcion||'—'}</span>
+            ${mntEstadoBadge(m.estado)}
+            <span class="mnt-fecha">${m.fecha||'—'}</span>
+            <button class="btn btn-edit btn-sm" style="margin-left:.5rem" onclick="openModal('mantenimiento','${m.id}')">✏️</button>
+          </div>`).join('')}</div>`
+      : '<div class="hist-empty">Sin mantenimientos registrados</div>';
+  }
+
+  // Alterna la fila expandida de detalles de un usuario
+  function toggleUserRow(id) {
+    const detail = document.getElementById('detail-'+id);
+    const arrow  = document.getElementById('arrow-'+id);
+    const isOpen = detail.style.display !== 'none';
+    detail.style.display = isOpen ? 'none' : 'table-row'; // Muestra u oculta
+    arrow.classList.toggle('open', !isOpen);               // Rota la flecha
+  }
+
+  // =====================================================================
+  // GESTIÓN DE MODALES (Abrir/Cerrar)
+  // =====================================================================
+
+  // Abre el modal del tipo especificado y lo precarga con datos si 'id' es dado
+  function openModal(type, id=null) {
+    if (type==='equipo') {
+      // Busca el equipo si es edición, o null si es creación
+      const e = id ? state.equipos.find(x=>x.id===id) : null;
+      document.getElementById('eq-id').value = id||''; // Guarda el ID o vacío
+      document.getElementById('modal-equipo-title').textContent = id ? 'EDITAR EQUIPO' : 'NUEVO EQUIPO';
+      // Rellena cada campo del formulario con los datos del equipo (o vacío si es nuevo)
+      ['tipo','estado','marca','modelo','serial','activo','spec','disco','ram','fecha','valor','ubicacion','obs','hostname']
+        .forEach(f => { const el=document.getElementById('eq-'+f); if(el) el.value=e?.[f]||''; });
+      document.getElementById('eq-ip-cable').value = e?.ipCable||''; // Campos con nombre diferente al ID
+      document.getElementById('eq-ip-wifi').value  = e?.ipWifi||'';
+      if(!e) document.getElementById('eq-estado').value='Activo'; // Por defecto: Activo
+      loadPeriphs(e?.perifericos||null); // Carga los periféricos del equipo
+      // Rellena el selector de usuarios para asignación
+      const usel = document.getElementById('eq-asign-usuario');
+      usel.innerHTML = '<option value="">— Sin asignar (queda en Bodega) —</option>' +
+        state.usuarios.map(u =>
+          `<option value="${u.id}">${u.nombre} ${u.apellido}${u.depto?' — '+u.depto:''}${u.siesa?' | SIESA: '+u.siesa:''}</option>`
+        ).join('');
+      // Busca la asignación actual del equipo
+      const asig = id ? state.asignaciones.find(a=>a.equipoId===id) : null;
+      usel.value = asig?.usuarioId||''; // Selecciona el usuario asignado o vacío
+      document.getElementById('eq-asign-fecha').value   = asig?.fecha||(id?'':new Date().toISOString().slice(0,10));
+      document.getElementById('eq-asign-entrega').value = asig?.entrega||'';
+      document.getElementById('eq-asign-obs').value     = asig?.obs||'';
+    }
+    if (type==='usuario') {
+      const u = id ? state.usuarios.find(x=>x.id===id) : null;
+      document.getElementById('usr-id').value = id||'';
+      document.getElementById('modal-usuario-title').textContent = id ? 'EDITAR USUARIO' : 'NUEVO USUARIO';
+      // Rellena los campos del formulario de usuario
+      ['nombre','apellido','cedula','cargo','depto','siesa','email','tel','sede']
+        .forEach(f => { const el=document.getElementById('usr-'+f); if(el) el.value=u?.[f]||''; });
+      // Actualiza el datalist de departamentos con los existentes
+      const dl = document.getElementById('depto-list');
+      dl.innerHTML = [...new Set(state.usuarios.map(u=>u.depto).filter(Boolean))]
+        .map(d=>`<option value="${d}">`).join('');
+    }
+    if (type==='mantenimiento') {
+      const m = id ? state.mantenimientos.find(x=>x.id===id) : null;
+      document.getElementById('mnt-id').value = id||'';
+      document.getElementById('modal-mnt-title').textContent = id ? 'EDITAR MANTENIMIENTO' : 'NUEVO MANTENIMIENTO';
+      // Rellena el selector de equipos
+      const esel = document.getElementById('mnt-equipo');
+      esel.innerHTML = '<option value="">Seleccionar equipo...</option>' +
+        state.equipos.map(e=>`<option value="${e.id}"${m&&m.equipoId===e.id?' selected':''}>${e.marca} ${e.modelo||''} — ${e.activo}</option>`).join('');
+      // Rellena los demás campos
+      document.getElementById('mnt-tipo').value        = m?.tipo||'';
+      document.getElementById('mnt-estado').value      = m?.estado||'Pendiente';
+      document.getElementById('mnt-fecha').value       = m?.fecha||new Date().toISOString().slice(0,10);
+      document.getElementById('mnt-tecnico').value     = m?.tecnico||'';
+      document.getElementById('mnt-descripcion').value = m?.descripcion||'';
+      document.getElementById('mnt-costo').value       = m?.costo||'';
+      document.getElementById('mnt-obs').value         = m?.obs||'';
+    }
+    // Agrega la clase 'open' al overlay para hacerlo visible
+    document.getElementById('modal-'+type).classList.add('open');
+  }
+
+  // Cierra el modal removiendo la clase 'open'
+  function closeModal(type) { document.getElementById('modal-'+type).classList.remove('open'); }
+
+  // =====================================================================
+  // PERIFÉRICOS: Mostrar/Ocultar campos al activar checkbox
+  // =====================================================================
+
+  // Muestra u oculta los campos de detalle del periférico según el checkbox
+  function togglePeriph(k) {
+    const on = document.getElementById('chk-'+k).checked; // ¿Está marcado?
+    document.getElementById('pf-'+k).style.display = on ? 'grid' : 'none'; // Muestra/oculta campos
+    document.getElementById('pr-'+k).classList.toggle('has-item', on); // Cambia estilo visual
+  }
+
+  // Desmarca todos los periféricos y limpia sus campos
+  function clearPeriphs() {
+    PERIPHS.forEach(k => {
+      document.getElementById('chk-'+k).checked = false;
+      document.getElementById('pf-'+k).style.display = 'none';
+      document.getElementById('pr-'+k).classList.remove('has-item');
+      ['marca','serial','activo','obs'].forEach(f => document.getElementById(`p-${k}-${f}`).value='');
+    });
+  }
+
+  // Carga los periféricos de un equipo en el formulario
+  function loadPeriphs(p) {
+    clearPeriphs(); // Primero limpia todo
+    if(!p) return;  // Si no hay periféricos, nada que hacer
+    PERIPHS.forEach(k => {
+      if(p[k]) { // Si el periférico existe en los datos
+        document.getElementById('chk-'+k).checked = true; // Marca el checkbox
+        document.getElementById('pf-'+k).style.display = 'grid'; // Muestra los campos
+        document.getElementById('pr-'+k).classList.add('has-item'); // Aplica estilo activo
+        ['marca','serial','activo','obs'].forEach(f => document.getElementById(`p-${k}-${f}`).value=p[k][f]||'');
+      }
+    });
+  }
+
+  // Lee los datos de periféricos del formulario y retorna un objeto
+  function getPeriphs() {
+    const r={};
+    PERIPHS.forEach(k => {
+      if(document.getElementById('chk-'+k).checked) { // Solo los que están marcados
+        r[k]={
+          marca:  document.getElementById(`p-${k}-marca`).value.trim(),
+          serial: document.getElementById(`p-${k}-serial`).value.trim(),
+          activo: document.getElementById(`p-${k}-activo`).value.trim(),
+          obs:    document.getElementById(`p-${k}-obs`).value.trim(),
+        };
+      }
+    });
+    return Object.keys(r).length ? r : null; // Retorna null si no hay ninguno marcado
+  }
+
+  // Genera los emojis de periféricos para la columna de la tabla de equipos
+  function periphIcons(p) {
+    if(!p) return '';
+    return Object.keys(p).map(k=>`<span title="${PERIPH_NAMES[k]}: ${p[k].marca||'—'}">${PERIPH_ICONS[k]}</span>`).join('');
+  }
+
+  // =====================================================================
+  // GUARDAR EQUIPO
+  // =====================================================================
+
+  function saveEquipo() {
+    const id        = document.getElementById('eq-id').value; // ID si es edición
+    const usuarioId = document.getElementById('eq-asign-usuario').value; // Usuario a asignar
+    // Construye el objeto equipo con todos los campos del formulario
+    const obj = {
+      tipo:     document.getElementById('eq-tipo').value,
+      estado:   document.getElementById('eq-estado').value,
+      marca:    document.getElementById('eq-marca').value.trim(),
+      modelo:   document.getElementById('eq-modelo').value.trim(),
+      serial:   document.getElementById('eq-serial').value.trim(),
+      activo:   document.getElementById('eq-activo').value.trim(),
+      spec:     document.getElementById('eq-spec').value.trim(),
+      disco:    document.getElementById('eq-disco').value.trim(),
+      ram:      document.getElementById('eq-ram').value.trim(),
+      fecha:    document.getElementById('eq-fecha').value,
+      valor:    document.getElementById('eq-valor').value,
+      ubicacion:document.getElementById('eq-ubicacion').value.trim(),
+      obs:      document.getElementById('eq-obs').value.trim(),
+      hostname: document.getElementById('eq-hostname').value.trim(),
+      ipCable:  document.getElementById('eq-ip-cable').value.trim(),
+      ipWifi:   document.getElementById('eq-ip-wifi').value.trim(),
+      perifericos: getPeriphs(), // Periféricos del formulario
+    };
+    // Validación: los campos marcados con * son obligatorios
+    if(!obj.tipo||!obj.marca||!obj.serial||!obj.activo) { toast('Completa los campos requeridos *','error'); return; }
+    // Lógica de estado automático:
+    if(usuarioId && obj.estado==='En Bodega') obj.estado='Activo';  // Si se asigna, pasa a Activo
+    if(!usuarioId && obj.estado==='Activo')   obj.estado='En Bodega'; // Si se quita asignación, pasa a Bodega
+    let equipoId;
+    if(id) {
+      // EDICIÓN: actualiza el equipo existente con los nuevos datos
+      const i=state.equipos.findIndex(x=>x.id===id);
+      state.equipos[i]={...state.equipos[i],...obj}; // Spread: mantiene datos viejos y sobrescribe con nuevos
+      equipoId=id; toast('Equipo actualizado');
+    } else {
+      // CREACIÓN: genera ID y agrega al array
+      equipoId=uid(); state.equipos.push({id:equipoId,...obj}); toast('Equipo registrado');
+    }
+    // Maneja la asignación: crea, actualiza o elimina según lo elegido
+    const asigIdx=state.asignaciones.findIndex(a=>a.equipoId===equipoId);
+    if(usuarioId) {
+      const asigObj={equipoId,usuarioId,
+        fecha:   document.getElementById('eq-asign-fecha').value,
+        entrega: document.getElementById('eq-asign-entrega').value.trim(),
+        obs:     document.getElementById('eq-asign-obs').value.trim(),
+      };
+      if(asigIdx>=0) state.asignaciones[asigIdx]={...state.asignaciones[asigIdx],...asigObj}; // Actualiza
+      else           state.asignaciones.push({id:uid(),...asigObj}); // Crea nueva asignación
+    } else {
+      if(asigIdx>=0) state.asignaciones.splice(asigIdx,1); // Elimina la asignación si no hay usuario
+    }
+    save(); closeModal('equipo'); refreshAll(); // Guarda, cierra y actualiza todas las tablas
+  }
+
+  // Elimina un equipo y todos sus datos relacionados
+  function deleteEquipo(id) {
+    if(!confirm('¿Eliminar este equipo?')) return; // Confirmación del usuario
+    state.equipos               = state.equipos.filter(e=>e.id!==id);               // Elimina el equipo
+    state.asignaciones          = state.asignaciones.filter(a=>a.equipoId!==id);    // Elimina sus asignaciones
+    state.mantenimientos        = state.mantenimientos.filter(m=>m.equipoId!==id);  // Elimina sus mantenimientos
+    state.historialAsignaciones = state.historialAsignaciones.filter(h=>h.equipoId!==id); // Elimina su historial
+    save(); refreshAll(); toast('Equipo eliminado');
+  }
+
+  // =====================================================================
+  // GUARDAR USUARIO
+  // =====================================================================
+
+  function saveUsuario() {
+    const id=document.getElementById('usr-id').value;
+    // Construye el objeto con los datos del formulario
+    const obj={
+      nombre:   document.getElementById('usr-nombre').value.trim(),
+      apellido: document.getElementById('usr-apellido').value.trim(),
+      cedula:   document.getElementById('usr-cedula').value.trim(),
+      cargo:    document.getElementById('usr-cargo').value.trim(),
+      depto:    document.getElementById('usr-depto').value.trim(),
+      siesa:    document.getElementById('usr-siesa').value.trim(),
+      email:    document.getElementById('usr-email').value.trim(),
+      tel:      document.getElementById('usr-tel').value.trim(),
+      sede:     document.getElementById('usr-sede').value.trim(),
+    };
+    if(!obj.nombre||!obj.apellido) { toast('Nombre y apellido son requeridos','error'); return; }
+    if(id) {
+      const i=state.usuarios.findIndex(x=>x.id===id);
+      state.usuarios[i]={...state.usuarios[i],...obj}; toast('Usuario actualizado');
+    } else {
+      state.usuarios.push({id:uid(),...obj}); toast('Usuario registrado');
+    }
+    save(); closeModal('usuario'); refreshAll();
+  }
+
+  // Elimina un usuario y sus asignaciones activas (los equipos quedan sin asignar)
+  function deleteUsuario(id) {
+    if(!confirm('¿Eliminar usuario? Sus equipos quedarán sin asignar.')) return;
+    state.usuarios     = state.usuarios.filter(u=>u.id!==id);
+    state.asignaciones = state.asignaciones.filter(a=>a.usuarioId!==id);
+    save(); refreshAll(); toast('Usuario eliminado');
+  }
+
+  // =====================================================================
+  // FUNCIONES DE GENERACIÓN DE BADGES HTML
+  // =====================================================================
+
+  // Genera el HTML del badge de tipo de equipo con color según tipo
+  function tipoBadge(tipo) {
+    const map={'PC Escritorio':'pc','Laptop':'laptop','Monitor':'monitor'};
+    return `<span class="badge badge-${map[tipo]||'otro'}">${tipo}</span>`;
+  }
+
+  // Genera el HTML del badge de estado del equipo
+  function estadoBadge(est) {
+    const cls=est==='Activo'?'activo':est==='Baja'?'baja':'bodega';
+    return `<span class="badge badge-${cls}">${est}</span>`;
+  }
+
+  // Genera el chip visual de usuario con avatar de iniciales
+  function userChip(u) {
+    if(!u) return `<span style="color:var(--muted);font-size:.74rem">Sin asignar</span>`;
+    return `<div class="user-chip"><div class="avatar" style="background:${avatarColor(u.nombre)};color:#06030f">${initials(u.nombre,u.apellido)}</div>${u.nombre} ${u.apellido}</div>`;
+  }
+
+  // Genera el badge de tipo de mantenimiento
+  function mntTipoBadge(tipo) {
+    const map={Preventivo:'prev',Correctivo:'corr',Limpieza:'limp','Actualización':'act'};
+    return `<span class="badge badge-mnt-${map[tipo]||'prev'}">${tipo||'—'}</span>`;
+  }
+
+  // Genera el badge de estado de mantenimiento
+  function mntEstadoBadge(est) {
+    const map={Pendiente:'pend','En Proceso':'proc',Completado:'comp'};
+    return `<span class="badge badge-mnt-${map[est]||'pend'}">${est||'—'}</span>`;
+  }
+
+  // =====================================================================
+  // RENDERIZADO DE TABLAS
+  // =====================================================================
+
+  // Renderiza la tabla de equipos aplicando filtros de búsqueda, tipo y estado
+  function renderEquipos() {
+    const q  = (document.getElementById('eq-search').value||'').toLowerCase();  // Texto de búsqueda
+    const ft = document.getElementById('eq-filter-tipo').value;   // Filtro de tipo
+    const fe = document.getElementById('eq-filter-estado').value; // Filtro de estado
+    const list = state.equipos.filter(e => {
+      if(ft && e.tipo!==ft) return false;   // Filtra por tipo
+      if(fe && e.estado!==fe) return false; // Filtra por estado
+      // Busca el texto en múltiples campos del equipo
+      if(q && ![e.marca,e.modelo,e.serial,e.activo,e.hostname,e.ipCable,e.ipWifi].join(' ').toLowerCase().includes(q)) return false;
+      return true;
+    });
+    const tbody = document.getElementById('eq-tbody');
+    // Si no hay resultados, muestra un estado vacío
+    if(!list.length) { tbody.innerHTML=`<tr><td colspan="10"><div class="empty-state"><span class="icon">📦</span>Sin equipos registrados</div></td></tr>`; return; }
+    // Genera las filas HTML: cada equipo tiene una fila principal y una fila de detalle oculta
+    tbody.innerHTML = list.map((e,i)=>{
+      const a=state.asignaciones.find(x=>x.equipoId===e.id);    // Asignación activa
+      const u=a?state.usuarios.find(x=>x.id===a.usuarioId):null; // Usuario asignado
+      const mntCount  = state.mantenimientos.filter(m=>m.equipoId===e.id).length; // # mantenimientos
+      const histCount = state.historialAsignaciones.filter(h=>h.equipoId===e.id).length; // # historial
+      return `<tr class="eq-summary-row" onclick="toggleEquipoRow('${e.id}')">
+        <td class="mono"><span id="eq-arrow-${e.id}" class="eq-arrow">▶</span>${i+1}</td>
+        <td>${tipoBadge(e.tipo)}</td>
+        <td><b>${e.marca}</b></td>
+        <td style="color:var(--text-sec);font-size:.78rem">${e.modelo||'—'}</td>
+        <td class="mono">${e.serial}</td>
+        <td class="mono" style="color:var(--cyan)">${e.activo}</td>
+        <td>${estadoBadge(e.estado)}</td>
+        <td style="font-size:.95rem;letter-spacing:.08em">${periphIcons(e.perifericos)||'<span style="color:var(--muted);font-size:.7rem">—</span>'}</td>
+        <td>${userChip(u)}</td>
+        <td><div class="actions" onclick="event.stopPropagation()">
+          ${mntCount?`<span class="badge badge-mnt-corr" title="${mntCount} mantenimiento(s)" style="cursor:default">🔧${mntCount}</span>`:''}
+          ${histCount?`<span class="badge badge-laptop" title="${histCount} asignación(es) previas" style="cursor:default">📋${histCount}</span>`:''}
+          <button class="btn btn-edit btn-sm"  onclick="openModal('equipo','${e.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteEquipo('${e.id}')">🗑️</button>
+        </div></td>
+      </tr>
+      <!-- Fila de detalle oculta: contiene el historial y los mantenimientos del equipo -->
+      <tr id="eq-detail-${e.id}" class="eq-detail-row" style="display:none">
+        <td colspan="10" class="eq-detail-row">
+          <div class="eq-detail-inner">
+            <div class="eq-detail-tabs">
+              <button id="eqdt-hist-${e.id}" class="eq-dtab active" onclick="switchEqTab('${e.id}','hist')">📋 Historial de Asignaciones</button>
+              <button id="eqdt-mnt-${e.id}"  class="eq-dtab"        onclick="switchEqTab('${e.id}','mnt')">🔧 Mantenimientos</button>
+            </div>
+            <div id="eqdp-hist-${e.id}" class="eq-dpanel active"></div>
+            <div id="eqdp-mnt-${e.id}"  class="eq-dpanel"></div>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Renderiza la tabla de usuarios con filtros y filas expandibles
+  function renderUsuarios() {
+    const q  = (document.getElementById('usr-search').value||'').toLowerCase();
+    const fd = document.getElementById('usr-filter-dep').value;
+    // Actualiza las opciones del filtro de departamento con los valores actuales en los datos
+    const deptos = [...new Set(state.usuarios.map(u=>u.depto).filter(Boolean))]; // Departamentos únicos
+    const sel    = document.getElementById('usr-filter-dep');
+    const cur    = sel.value; // Guarda la selección actual para restaurarla
+    sel.innerHTML = '<option value="">Todos los departamentos</option>' +
+      deptos.map(d=>`<option${d===cur?' selected':''}>${d}</option>`).join('');
+    const list = state.usuarios.filter(u => {
+      if(fd && u.depto!==fd) return false;
+      if(q && ![u.nombre,u.apellido,u.cedula,u.cargo,u.depto,u.siesa,u.email].join(' ').toLowerCase().includes(q)) return false;
+      return true;
+    }).sort((a, b) => {
+      // Ordena alfabéticamente por nombre, luego por apellido
+      const na = (a.nombre || '').toLowerCase();
+      const nb = (b.nombre || '').toLowerCase();
+      if (na !== nb) return na.localeCompare(nb);
+      return (a.apellido || '').toLowerCase().localeCompare((b.apellido || '').toLowerCase());
+    });
+    const tbody = document.getElementById('users-grid');
+    if(!list.length) {
+      tbody.innerHTML=`<tr><td colspan="3"><div class="empty-state"><span class="icon">👥</span>Sin usuarios registrados</div></td></tr>`;
+      return;
+    }
+    // Genera las filas de usuarios con su fila de detalle expandible
+    tbody.innerHTML = list.map((u,i) => {
+      const asigs   = state.asignaciones.filter(a=>a.usuarioId===u.id); // Asignaciones del usuario
+      const equipos = asigs.map(a=>state.equipos.find(e=>e.id===a.equipoId)).filter(Boolean); // Equipos reales
+      const equipHtml = equipos.length
+        ? `<div class="user-equip-tags">${equipos.map(e=>`<span class="equip-tag">${tipoBadge(e.tipo)} <b>${e.marca}</b> ${e.modelo||''}</span>`).join('')}</div>`
+        : `<span class="no-equip">Sin equipos asignados</span>`;
+      return `
+        <tr class="usr-summary-row" onclick="toggleUserRow('${u.id}')">
+          <td class="mono">${i+1}</td>
+          <td>
+            <div class="user-info-cell">
+              <div class="avatar-lg" style="background:${avatarColor(u.nombre)};color:#06030f">${initials(u.nombre,u.apellido)}</div>
+              <div>
+                <div class="user-info-name">${u.nombre} ${u.apellido}</div>
+                ${u.email?`<div class="user-info-email">${u.email}</div>`:''}
+              </div>
+              <span id="arrow-${u.id}" class="usr-arrow">▶</span>
+            </div>
+          </td>
+          <td>
+            <div class="actions">
+              <button class="btn btn-edit btn-sm"    onclick="event.stopPropagation();openModal('usuario','${u.id}')">✏️</button>
+              <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openModal('equipo')">+ Equipo</button>
+              <button class="btn btn-danger btn-sm"  onclick="event.stopPropagation();deleteUsuario('${u.id}')">🗑️</button>
+            </div>
+          </td>
+        </tr>
+        <!-- Fila expandible con los detalles completos del usuario -->
+        <tr id="detail-${u.id}" class="usr-detail-row" style="display:none">
+          <td></td>
+          <td colspan="2">
+            <div class="usr-detail-grid">
+              <div class="usr-detail-field"><span>Cédula</span><div style="font-family:var(--mono)">${u.cedula||'—'}</div></div>
+              <div class="usr-detail-field"><span>Cargo</span><div>${u.cargo||'—'}</div></div>
+              <div class="usr-detail-field"><span>Departamento</span><div style="color:var(--text-sec)">${u.depto||'—'}</div></div>
+              <div class="usr-detail-field"><span>SIESA</span><div style="font-family:var(--mono);color:var(--yellow)">${u.siesa||'—'}</div></div>
+              <div class="usr-detail-field"><span>Teléfono</span><div>${u.tel||'—'}</div></div>
+              <div class="usr-detail-field"><span>Sede / Oficina</span><div>${u.sede||'—'}</div></div>
+              <div class="usr-detail-field" style="grid-column:1/-1"><span>Equipos Asignados</span><div style="margin-top:.3rem">${equipHtml}</div></div>
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  // Renderiza la tabla de mantenimientos con estadísticas y filtros
+  function renderMantenimientos() {
+    const q   = (document.getElementById('mnt-search').value||'').toLowerCase();
+    const ft  = document.getElementById('mnt-filter-tipo').value;
+    const fe  = document.getElementById('mnt-filter-estado').value;
+    const list = state.mantenimientos.filter(m => {
+      const e=state.equipos.find(x=>x.id===m.equipoId); // Busca el equipo del mantenimiento
+      if(ft && m.tipo!==ft) return false;
+      if(fe && m.estado!==fe) return false;
+      if(q && ![m.tecnico,m.descripcion,m.obs,e?.marca,e?.modelo,e?.serial,e?.activo].join(' ').toLowerCase().includes(q)) return false;
+      return true;
+    });
+    // Actualiza los 4 contadores de las tarjetas de estadísticas
+    document.getElementById('mnt-total').textContent = state.mantenimientos.length;
+    document.getElementById('mnt-pend').textContent  = state.mantenimientos.filter(m=>m.estado==='Pendiente').length;
+    document.getElementById('mnt-proc').textContent  = state.mantenimientos.filter(m=>m.estado==='En Proceso').length;
+    document.getElementById('mnt-comp').textContent  = state.mantenimientos.filter(m=>m.estado==='Completado').length;
+    const tbody = document.getElementById('mnt-tbody');
+    if(!list.length) { tbody.innerHTML=`<tr><td colspan="9"><div class="empty-state"><span class="icon">🔧</span>Sin mantenimientos registrados</div></td></tr>`; return; }
+    tbody.innerHTML = list.sort((a,b)=>b.fecha>a.fecha?1:-1).map((m,i)=>{ // Ordena por fecha desc
+      const e=state.equipos.find(x=>x.id===m.equipoId); // Equipo relacionado al mantenimiento
+      return `<tr>
+        <td class="mono">${i+1}</td>
+        <td>${e?`<b>${e.marca}</b> ${e.modelo||''}<br><span class="mono" style="color:var(--cyan)">${e.activo}</span>`:'<span style="color:var(--muted)">Equipo eliminado</span>'}</td>
+        <td>${mntTipoBadge(m.tipo)}</td>
+        <td>${mntEstadoBadge(m.estado)}</td>
+        <td class="mono" style="font-size:.7rem">${m.fecha||'—'}</td>
+        <td style="font-size:.78rem">${m.tecnico||'<span style="color:var(--muted)">—</span>'}</td>
+        <td style="font-size:.78rem;max-width:200px">${m.descripcion||'—'}</td>
+        <td class="mono" style="color:var(--yellow)">${m.costo?'$'+Number(m.costo).toLocaleString():'—'}</td>
+        <td><div class="actions">
+          <button class="btn btn-edit btn-sm"   onclick="openModal('mantenimiento','${m.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteMantenimiento('${m.id}')">🗑️</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Elimina un mantenimiento por ID
+  function deleteMantenimiento(id) {
+    if(!confirm('¿Eliminar este registro de mantenimiento?')) return;
+    state.mantenimientos = state.mantenimientos.filter(m=>m.id!==id);
+    save(); renderMantenimientos(); toast('Mantenimiento eliminado');
+  }
+
+  // Guarda un mantenimiento nuevo o actualiza uno existente
+  function saveMantenimiento() {
+    const id = document.getElementById('mnt-id').value;
+    const obj = {
+      equipoId:    document.getElementById('mnt-equipo').value,
+      tipo:        document.getElementById('mnt-tipo').value,
+      estado:      document.getElementById('mnt-estado').value,
+      fecha:       document.getElementById('mnt-fecha').value,
+      tecnico:     document.getElementById('mnt-tecnico').value.trim(),
+      descripcion: document.getElementById('mnt-descripcion').value.trim(),
+      costo:       document.getElementById('mnt-costo').value,
+      obs:         document.getElementById('mnt-obs').value.trim(),
+    };
+    // Valida campos obligatorios
+    if(!obj.equipoId||!obj.tipo||!obj.descripcion) { toast('Completa los campos requeridos *','error'); return; }
+    if(id) {
+      const i=state.mantenimientos.findIndex(x=>x.id===id);
+      state.mantenimientos[i]={...state.mantenimientos[i],...obj}; toast('Mantenimiento actualizado');
+    } else {
+      state.mantenimientos.push({id:uid(),...obj}); toast('Mantenimiento registrado');
+    }
+    save(); closeModal('mantenimiento'); renderMantenimientos(); renderEquipos(); // Actualiza ambas tablas
+  }
+
+  // Renderiza la tabla de asignaciones activas (usuario ↔ equipo)
+  function renderAsignaciones() {
+    const q = (document.getElementById('asig-search').value||'').toLowerCase();
+    const list = state.asignaciones.filter(a => {
+      const u=state.usuarios.find(x=>x.id===a.usuarioId);
+      const e=state.equipos.find(x=>x.id===a.equipoId);
+      if(!u||!e) return false; // Descarta asignaciones con usuario o equipo eliminado
+      if(q && ![u.nombre,u.apellido,u.depto,u.siesa,e.marca,e.modelo,e.serial,e.activo].join(' ').toLowerCase().includes(q)) return false;
+      return true;
+    });
+    const tbody=document.getElementById('asig-tbody');
+    if(!list.length) { tbody.innerHTML=`<tr><td colspan="9"><div class="empty-state"><span class="icon">🔗</span>Sin asignaciones</div></td></tr>`; return; }
+    tbody.innerHTML=list.map(a=>{
+      const u=state.usuarios.find(x=>x.id===a.usuarioId);
+      const e=state.equipos.find(x=>x.id===a.equipoId);
+      return `<tr>
+        <td>${userChip(u)}</td>
+        <td class="mono" style="color:var(--yellow);font-size:.7rem">${u.siesa||'—'}</td>
+        <td style="color:var(--text-sec);font-size:.78rem">${u.depto||'—'}</td>
+        <td><b>${e.marca}</b> ${e.modelo||''}</td>
+        <td>${tipoBadge(e.tipo)}</td>
+        <td class="mono">${e.serial}</td>
+        <td class="mono" style="color:var(--cyan)">${e.activo}</td>
+        <td class="mono" style="font-size:.7rem">${a.fecha||'—'}</td>
+        <td><div class="actions">
+          <button class="btn btn-edit btn-sm"   onclick="openModal('equipo','${e.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="quitarAsignacion('${a.id}')">🔓 Quitar</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Quita la asignación activa y la mueve al historial; el equipo regresa a "En Bodega"
+  function quitarAsignacion(id) {
+    if(!confirm('¿Quitar esta asignación? El equipo volverá a Bodega.')) return;
+    const a=state.asignaciones.find(x=>x.id===id);
+    if(a) {
+      const e=state.equipos.find(x=>x.id===a.equipoId);
+      if(e) e.estado='En Bodega'; // Cambia el estado del equipo a Bodega
+      // Agrega al historial con fechas de inicio y fin
+      state.historialAsignaciones.push({
+        id:uid(), equipoId:a.equipoId, usuarioId:a.usuarioId,
+        fechaInicio:a.fecha||'', fechaFin:new Date().toISOString().slice(0,10), // Fecha de hoy como fin
+        entrega:a.entrega||'', obs:a.obs||''
+      });
+    }
+    state.asignaciones=state.asignaciones.filter(x=>x.id!==id); // Elimina la asignación activa
+    save(); refreshAll(); toast('Asignación eliminada y guardada en historial');
+  }
+
+  // Actualiza todas las tablas visibles de una sola vez
+  function refreshAll() {
+    renderEquipos(); renderUsuarios(); renderAsignaciones();
+    // Solo actualiza mantenimientos si esa sección está activa (para no procesar en vano)
+    if(document.getElementById('tab-mantenimientos').classList.contains('active')) renderMantenimientos();
+  }
+
+  // =====================================================================
+  // EXPORTAR / IMPORTAR DATOS
+  // =====================================================================
+
+  // Genera un archivo JSON con todos los datos y lo descarga al PC del usuario
+  function exportarDatos() {
+    const fecha=new Date().toISOString().slice(0,10); // Fecha actual en formato YYYY-MM-DD
+    const nombre=`inventario_TI_${fecha}.json`;       // Nombre del archivo con la fecha
+    const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}); // Crea el archivo
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); // Crea una URL temporal para el archivo
+    a.download=nombre;                // Nombre con el que se descargará
+    a.click();                        // Simula un clic para descargar
+    URL.revokeObjectURL(a.href);      // Libera la memoria de la URL temporal
+    toast(`Archivo "${nombre}" descargado`);
+  }
+
+  // Maneja el evento de soltar un archivo en la drop-zone
+  function handleDrop(e) {
+    e.preventDefault();                      // Evita que el navegador abra el archivo
+    e.currentTarget.classList.remove('drag'); // Quita el estilo de "arrastrando"
+    if(e.dataTransfer.files[0]) processImport(e.dataTransfer.files[0]); // Procesa el primer archivo
+  }
+
+  // Maneja el evento de seleccionar un archivo con el input[type=file]
+  function handleFileImport(input) { if(input.files[0]) processImport(input.files[0]); }
+
+  // Procesa el archivo JSON importado: lo valida y carga los datos
+  function processImport(file) {
+    if(!file.name.endsWith('.json')) { toast('Selecciona un archivo .json','error'); return; }
+    const r=new FileReader(); // API del navegador para leer archivos
+    r.onload=e=>{
+      try {
+        const d=JSON.parse(e.target.result); // Parsea el JSON del archivo
+        if(!d.equipos||!d.usuarios) throw new Error(); // Valida estructura mínima
+        // Confirma con el usuario mostrando cuántos datos se importarán
+        if(!confirm(`¿Importar datos?\n• ${d.equipos.length} equipos\n• ${d.usuarios.length} usuarios\n\nEsto reemplazará los datos actuales.`)) return;
+        // Asegura compatibilidad con versiones antiguas sin estos arrays
+        if(!d.asignaciones) d.asignaciones=[];
+        if(!d.mantenimientos) d.mantenimientos=[];
+        if(!d.historialAsignaciones) d.historialAsignaciones=[];
+        // Migra asignaciones incrustadas en equipos (formato antiguo)
+        d.equipos.forEach(e=>{
+          if(e.asignacion&&e.asignacion.usuarioId) {
+            const exists=d.asignaciones.find(a=>a.equipoId===e.id);
+            if(!exists) d.asignaciones.push({id:uid(),equipoId:e.id,...e.asignacion});
+            delete e.asignacion;
+          }
+        });
+        state=d; save(); closeModal('backup'); refreshAll(); // Reemplaza los datos y actualiza UI
+        toast(`Importado: ${d.equipos.length} equipos, ${d.usuarios.length} usuarios`);
+      } catch { toast('Archivo inválido o corrupto','error'); }
+    };
+    r.readAsText(file); // Lee el archivo como texto (dispara r.onload al terminar)
+  }
+
+  // =====================================================================
+  // CERRAR MODALES AL HACER CLIC EN EL FONDO OSCURO
+  // =====================================================================
+  // Para cada modal, cierra si el clic fue en el overlay (fondo), no en el modal mismo
+  ['equipo','usuario','backup','mantenimiento'].forEach(t=>{
+    document.getElementById('modal-'+t).addEventListener('click', function(e){ if(e.target===this) closeModal(t); });
+  });
+
+  // =====================================================================
+  // INICIO DE LA APLICACIÓN
+  // Carga la primera pestaña al abrir la página
+  // =====================================================================
+  switchTab('usuarios');
+</script>
+</body>
+</html>
